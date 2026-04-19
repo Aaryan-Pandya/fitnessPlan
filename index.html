@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitPlan</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>FitPlan</h1>
+    <p class="subtitle">Guided fitness intake with AI plan generation</p>
+
+    <div class="progress-wrap">
+      <div class="progress-label" id="progressLabel">Question 1: Age</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <section class="card step active" id="step-age">
+      <h2>How old are you?</h2>
+
+      <label for="age">Age</label>
+      <select id="age">
+        <option value="">Choose age</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18+">18+</option>
+      </select>
+
+      <div class="error-box hidden" id="ageError"></div>
+
+      <div class="button-row single">
+        <button id="ageNext">Next</button>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="card step" id="step-too-young">
+      <h2>Not Available Yet</h2>
+      <div class="notice-box">
+        <p>This program starts at age 9.</p>
+        <p>Please come back later with a parent or guardian when you are older.</p>
+      </div>
+
+      <div class="button-row single">
+        <button id="tooYoungBack">Back</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="card step" id="step-parent">
+      <h2>Parent or Guardian Needed</h2>
+      <div class="notice-box">
+        <p>Please hand the device to a parent or guardian before continuing.</p>
+      </div>
+
+      <div class="button-row single">
+        <button id="parentConfirm">I confirm I am the parent/guardian</button>
+      </div>
+
+      <div class="button-row">
+        <button class="secondary" id="parentBack">Back</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="card step" id="step-categories">
+      <h2>Which categories do you want?</h2>
+      <p class="helper">Choose one or more.</p>
+
+      <div class="choice-grid">
+        <label class="choice-card">
+          <input type="checkbox" name="category" value="Cardio" />
+          <span>Cardio</span>
+        </label>
+
+        <label class="choice-card">
+          <input type="checkbox" name="category" value="Strength" />
+          <span>Strength</span>
+        </label>
+
+        <label class="choice-card">
+          <input type="checkbox" name="category" value="Endurance" />
+          <span>Endurance</span>
+        </label>
+
+        <label class="choice-card">
+          <input type="checkbox" name="category" value="Flexibility" />
+          <span>Flexibility</span>
+        </label>
+      </div>
+
+      <div class="error-box hidden" id="categoriesError"></div>
+
+      <div class="button-row">
+        <button class="secondary" id="categoriesBack">Back</button>
+        <button id="categoriesNext">Next</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 -->
+    <section class="card step" id="step-baseline">
+      <h2>Baseline Questions</h2>
+      <p class="helper">Some fields are required. Some are optional. The app will only show the sections you selected.</p>
+
+      <!-- GENERAL -->
+      <div class="subcard">
+        <h3>General</h3>
+
+        <p class="group-title">Current activity background</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="activityBackground" value="PE/classes" />
+            <span>PE/classes</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="activityBackground" value="Sports team" />
+            <span>Sports team</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="activityBackground" value="Occasional workouts" />
+            <span>Occasional workouts</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="activityBackground" value="Mostly inactive" />
+            <span>Mostly inactive</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="activityBackground" value="Other" id="activityBackgroundOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="activityBackgroundOtherBlock">
+          <label for="activityBackgroundOther">Other activity background</label>
+          <input type="text" id="activityBackgroundOther" placeholder="Type here" />
+        </div>
+
+        <p class="group-title">Usual training setting</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="trainingSetting" value="Home" />
+            <span>Home</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="trainingSetting" value="Gym" />
+            <span>Gym</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="trainingSetting" value="School/team space" />
+            <span>School/team space</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="trainingSetting" value="Outdoors" />
+            <span>Outdoors</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="trainingSetting" value="Other" id="trainingSettingOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="trainingSettingOtherBlock">
+          <label for="trainingSettingOther">Other training setting</label>
+          <input type="text" id="trainingSettingOther" placeholder="Type here" />
+        </div>
+
+        <label for="avoidNotes">Anything to avoid or keep in mind</label>
+        <textarea id="avoidNotes" rows="3" placeholder="Write none if nothing specific"></textarea>
+      </div>
+
+      <!-- CARDIO -->
+      <div class="subcard category-block hidden" id="baseline-cardio">
+        <h3>Cardio</h3>
+        <p class="helper">Cardio here means shorter, faster, more interval-style work.</p>
+
+        <p class="group-title">Cardio focus areas</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="cardioFocus" value="Running speed" />
+            <span>Running speed</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioFocus" value="Swim speed" />
+            <span>Swim speed</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioFocus" value="Cycling speed" />
+            <span>Cycling speed</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioFocus" value="Sport conditioning" />
+            <span>Sport conditioning</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioFocus" value="Other" id="cardioFocusOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="cardioFocusOtherBlock">
+          <label for="cardioFocusOther">Other cardio focus</label>
+          <input type="text" id="cardioFocusOther" placeholder="Type here" />
+        </div>
+
+        <p class="group-title">Main cardio goals</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="cardioGoal" value="Speed" />
+            <span>Speed</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioGoal" value="Acceleration" />
+            <span>Acceleration</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioGoal" value="Intervals" />
+            <span>Intervals</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioGoal" value="Recover between bursts" />
+            <span>Recover between bursts</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="cardioGoal" value="Other" id="cardioGoalOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="cardioGoalOtherBlock">
+          <label for="cardioGoalOther">Other cardio goal</label>
+          <input type="text" id="cardioGoalOther" placeholder="Type here" />
+        </div>
+
+        <div class="metric-grid">
+          <div>
+            <label for="cardio200m">200m time</label>
+            <input type="text" id="cardio200m" placeholder="0:38" />
+          </div>
+          <div>
+            <label for="cardio400m">400m time</label>
+            <input type="text" id="cardio400m" placeholder="1:28" />
+          </div>
+          <div>
+            <label for="cardio50swim">50m swim time</label>
+            <input type="text" id="cardio50swim" placeholder="0:52" />
+          </div>
+          <div>
+            <label for="cardio100swim">100m swim time</label>
+            <input type="text" id="cardio100swim" placeholder="2:05" />
+          </div>
+          <div>
+            <label for="cardioSprintRepeats">Hard repeats before slowing down</label>
+            <input type="number" id="cardioSprintRepeats" min="0" placeholder="6" />
+          </div>
+          <div>
+            <label for="cardioFastMinutes">Minutes you can hold a fast pace</label>
+            <input type="number" id="cardioFastMinutes" min="0" placeholder="8" />
+          </div>
+        </div>
+
+        <label for="cardioNotes">Other cardio notes (optional)</label>
+        <textarea id="cardioNotes" rows="3" placeholder="Optional"></textarea>
+      </div>
+
+      <!-- STRENGTH -->
+      <div class="subcard category-block hidden" id="baseline-strength">
+        <h3>Strength</h3>
+
+        <p class="group-title">Available equipment</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Pull-up bar" />
+            <span>Pull-up bar</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Bands" />
+            <span>Bands</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Barbell" />
+            <span>Barbell</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Dumbbells" />
+            <span>Dumbbells</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Machines" />
+            <span>Machines</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Bench/Box" />
+            <span>Bench/Box</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Rings/TRX" />
+            <span>Rings/TRX</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Kettlebells" />
+            <span>Kettlebells</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthEquipment" value="Other" id="strengthEquipmentOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="strengthEquipmentOtherBlock">
+          <label for="strengthEquipmentOther">Other equipment</label>
+          <input type="text" id="strengthEquipmentOther" placeholder="Type here" />
+        </div>
+
+        <div class="suggestion-box">
+          <div class="suggestion-title">Suggested strength styles from equipment</div>
+          <div class="suggestion-chips" id="strengthSuggestions">Select equipment to see suggestions.</div>
+        </div>
+
+        <p class="group-title">Strength styles to include</p>
+        <div class="choice-grid">
+          <label class="choice-card strength-style-card" data-style="Calisthenics">
+            <input type="checkbox" name="strengthStyle" value="Calisthenics" />
+            <span>Calisthenics</span>
+          </label>
+          <label class="choice-card strength-style-card" data-style="Weightlifting">
+            <input type="checkbox" name="strengthStyle" value="Weightlifting" />
+            <span>Weightlifting</span>
+          </label>
+          <label class="choice-card strength-style-card" data-style="Machines">
+            <input type="checkbox" name="strengthStyle" value="Machines" />
+            <span>Machines</span>
+          </label>
+          <label class="choice-card strength-style-card" data-style="Bands">
+            <input type="checkbox" name="strengthStyle" value="Bands" />
+            <span>Bands</span>
+          </label>
+          <label class="choice-card strength-style-card" data-style="Isometrics">
+            <input type="checkbox" name="strengthStyle" value="Isometrics" />
+            <span>Isometrics</span>
+          </label>
+          <label class="choice-card strength-style-card" data-style="Hybrid">
+            <input type="checkbox" name="strengthStyle" value="Hybrid" />
+            <span>Hybrid</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthStyle" value="Other" id="strengthStyleOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="strengthStyleOtherBlock">
+          <label for="strengthStyleOther">Other strength style</label>
+          <input type="text" id="strengthStyleOther" placeholder="Type here" />
+        </div>
+
+        <p class="group-title">Main strength goals</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Upper body strength" />
+            <span>Upper body strength</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Lower body strength" />
+            <span>Lower body strength</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Core strength" />
+            <span>Core strength</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Full body strength" />
+            <span>Full body strength</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Muscle endurance" />
+            <span>Muscle endurance</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Skill strength" />
+            <span>Skill strength</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Power" />
+            <span>Power</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="strengthGoal" value="Other" id="strengthGoalOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="strengthGoalOtherBlock">
+          <label for="strengthGoalOther">Other strength goal</label>
+          <input type="text" id="strengthGoalOther" placeholder="Type here" />
+        </div>
+
+        <label for="strengthExperience">Strength experience</label>
+        <select id="strengthExperience">
+          <option value="">Choose one</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Some experience">Some experience</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced for age">Advanced for age</option>
+        </select>
+
+        <div class="metric-grid">
+          <div>
+            <label for="pushups">Push-ups in one set</label>
+            <input type="number" id="pushups" min="0" placeholder="15" />
+          </div>
+          <div>
+            <label for="pullups">Pull-ups in one set</label>
+            <input type="number" id="pullups" min="0" placeholder="2" />
+          </div>
+          <div>
+            <label for="plankSeconds">Plank (seconds)</label>
+            <input type="number" id="plankSeconds" min="0" placeholder="45" />
+          </div>
+          <div>
+            <label for="wallSitSeconds">Wall sit (seconds)</label>
+            <input type="number" id="wallSitSeconds" min="0" placeholder="60" />
+          </div>
+          <div>
+            <label for="squatReps">Bodyweight squats in one set</label>
+            <input type="number" id="squatReps" min="0" placeholder="20" />
+          </div>
+          <div>
+            <label for="deadHangSeconds">Dead hang (seconds)</label>
+            <input type="number" id="deadHangSeconds" min="0" placeholder="20" />
+          </div>
+        </div>
+
+        <label for="strengthNotes">Other strength notes (optional)</label>
+        <textarea id="strengthNotes" rows="3" placeholder="Optional"></textarea>
+      </div>
+
+      <!-- ENDURANCE -->
+      <div class="subcard category-block hidden" id="baseline-endurance">
+        <h3>Endurance</h3>
+        <p class="helper">Endurance here means longer, steadier, more sustained work.</p>
+
+        <p class="group-title">Endurance focus areas</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceFocus" value="Long steady running" />
+            <span>Long steady running</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceFocus" value="Long cycling" />
+            <span>Long cycling</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceFocus" value="Long swimming" />
+            <span>Long swimming</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceFocus" value="Walking/hiking" />
+            <span>Walking/hiking</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceFocus" value="Other" id="enduranceFocusOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="enduranceFocusOtherBlock">
+          <label for="enduranceFocusOther">Other endurance focus</label>
+          <input type="text" id="enduranceFocusOther" placeholder="Type here" />
+        </div>
+
+        <p class="group-title">Main endurance goals</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceGoal" value="Stamina" />
+            <span>Stamina</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceGoal" value="Longer distance" />
+            <span>Longer distance</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceGoal" value="Steady pacing" />
+            <span>Steady pacing</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceGoal" value="General stamina" />
+            <span>General stamina</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="enduranceGoal" value="Other" id="enduranceGoalOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="enduranceGoalOtherBlock">
+          <label for="enduranceGoalOther">Other endurance goal</label>
+          <input type="text" id="enduranceGoalOther" placeholder="Type here" />
+        </div>
+
+        <div class="metric-grid">
+          <div>
+            <label for="enduranceLongestSession">Longest steady session (minutes)</label>
+            <input type="number" id="enduranceLongestSession" min="0" placeholder="45" />
+          </div>
+          <div>
+            <label for="enduranceDays">Endurance days per week</label>
+            <select id="enduranceDays">
+              <option value="">Choose one</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4+">4+</option>
+            </select>
+          </div>
+          <div>
+            <label for="enduranceWeeklyMinutes">Total steady minutes per week</label>
+            <input type="number" id="enduranceWeeklyMinutes" min="0" placeholder="120" />
+          </div>
+          <div>
+            <label for="endurancePacing">How consistent is your pacing?</label>
+            <select id="endurancePacing">
+              <option value="">Choose one</option>
+              <option value="Very inconsistent">Very inconsistent</option>
+              <option value="Somewhat consistent">Somewhat consistent</option>
+              <option value="Mostly consistent">Mostly consistent</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="enduranceNotes">Other endurance notes (optional)</label>
+        <textarea id="enduranceNotes" rows="3" placeholder="Optional"></textarea>
+      </div>
+
+      <!-- FLEXIBILITY -->
+      <div class="subcard category-block hidden" id="baseline-flexibility">
+        <h3>Flexibility</h3>
+
+        <p class="group-title">Focus areas</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="flexFocus" value="Lower body" />
+            <span>Lower body</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexFocus" value="Upper body" />
+            <span>Upper body</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexFocus" value="Full body" />
+            <span>Full body</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexFocus" value="Mobility/recovery" />
+            <span>Mobility/recovery</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexFocus" value="Other" id="flexFocusOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="flexFocusOtherBlock">
+          <label for="flexFocusOther">Other flexibility focus</label>
+          <input type="text" id="flexFocusOther" placeholder="Type here" />
+        </div>
+
+        <p class="group-title">Main flexibility goals</p>
+        <div class="choice-grid">
+          <label class="choice-card">
+            <input type="checkbox" name="flexGoal" value="Better range of motion" />
+            <span>Better range of motion</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexGoal" value="Less stiffness" />
+            <span>Less stiffness</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexGoal" value="Sport movement" />
+            <span>Sport movement</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexGoal" value="Recovery" />
+            <span>Recovery</span>
+          </label>
+          <label class="choice-card">
+            <input type="checkbox" name="flexGoal" value="Other" id="flexGoalOtherCheck" />
+            <span>Other</span>
+          </label>
+        </div>
+
+        <div class="conditional-block hidden" id="flexGoalOtherBlock">
+          <label for="flexGoalOther">Other flexibility goal</label>
+          <input type="text" id="flexGoalOther" placeholder="Type here" />
+        </div>
+
+        <div class="metric-grid">
+          <div>
+            <label for="toeTouch">Can you touch your toes?</label>
+            <select id="toeTouch">
+              <option value="">Choose one</option>
+              <option value="Yes">Yes</option>
+              <option value="Almost">Almost</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label for="overheadReach">Can you comfortably raise both arms overhead?</label>
+            <select id="overheadReach">
+              <option value="">Choose one</option>
+              <option value="Yes">Yes</option>
+              <option value="Somewhat">Somewhat</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label for="deepSquat">Can you sit in a deep squat comfortably?</label>
+            <select id="deepSquat">
+              <option value="">Choose one</option>
+              <option value="Yes">Yes</option>
+              <option value="Somewhat">Somewhat</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label for="stiffnessLevel">Current stiffness level</label>
+            <select id="stiffnessLevel">
+              <option value="">Choose one</option>
+              <option value="Low">Low</option>
+              <option value="Moderate">Moderate</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="flexTightAreas">Main tight areas (optional)</label>
+        <textarea id="flexTightAreas" rows="3" placeholder="Optional"></textarea>
+      </div>
+
+      <div class="error-box hidden" id="baselineError"></div>
+
+      <div class="button-row">
+        <button class="secondary" id="baselineBack">Back</button>
+        <button id="baselineNext">Next</button>
+      </div>
+    </section>
+
+    <!-- STEP 6 -->
+    <section class="card step" id="step-schedule">
+      <h2>Schedule</h2>
+
+      <label for="availableDays">Available workout days per week</label>
+      <select id="availableDays">
+        <option value="">Choose one</option>
+        <option value="2">2 days</option>
+        <option value="3">3 days</option>
+        <option value="4">4 days</option>
+        <option value="5">5 days</option>
+        <option value="6">6 days</option>
+      </select>
+
+      <p class="group-title">Session length</p>
+      <div class="choice-grid">
+        <label class="choice-card">
+          <input type="radio" name="sessionLength" value="30 mins" />
+          <span>30 mins</span>
+        </label>
+        <label class="choice-card">
+          <input type="radio" name="sessionLength" value="60 mins" />
+          <span>60 mins</span>
+        </label>
+        <label class="choice-card">
+          <input type="radio" name="sessionLength" value="90 mins" />
+          <span>90 mins</span>
+        </label>
+      </div>
+
+      <div class="error-box hidden" id="scheduleError"></div>
+
+      <div class="button-row">
+        <button class="secondary" id="scheduleBack">Back</button>
+        <button id="scheduleNext">Next</button>
+      </div>
+    </section>
+
+    <!-- STEP 7 -->
+    <section class="card step" id="step-parent-review">
+      <h2>Final Parent Review</h2>
+      <div class="notice-box">
+        <p>Please keep the device with the parent or guardian for the final review.</p>
+      </div>
+
+      <div class="button-row single">
+        <button id="parentReviewNext">Continue as parent/guardian</button>
+      </div>
+
+      <div class="button-row">
+        <button class="secondary" id="parentReviewBack">Back</button>
+      </div>
+    </section>
+
+    <!-- STEP 8 -->
+    <section class="card step" id="step-result">
+      <h2>Intake Summary</h2>
+      <div class="result-box">
+        <p id="resultText"></p>
+      </div>
+
+      <div class="button-row">
+        <button class="secondary" id="generatePlanBtn">Generate AI Plan</button>
+        <button id="startOver">Start Over</button>
+      </div>
+
+      <div class="notice-box hidden" id="aiStatus"></div>
+
+      <div class="plan-card hidden" id="aiPlanCard">
+        <h3 id="aiPlanTitle"></h3>
+        <p id="aiPlanSummary"></p>
+
+        <div class="plan-section">
+          <h4>Warm-up</h4>
+          <ul id="aiWarmup"></ul>
+        </div>
+
+        <div class="plan-section">
+          <h4>Main blocks</h4>
+          <div id="aiMainBlocks"></div>
+        </div>
+
+        <div class="plan-section">
+          <h4>Cool-down</h4>
+          <ul id="aiCooldown"></ul>
+        </div>
+
+        <div class="plan-section">
+          <h4>Safety notes</h4>
+          <ul id="aiSafety"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
