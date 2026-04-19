@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Account Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5eefc;
+      margin: 0;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    input, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
+    input {
+      background: #0f172a;
+      color: white;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>FitnessPlan Account Test</h1>
+
+    <div class="card">
+      <h2>Sign Up</h2>
+      <input id="signupName" placeholder="Display name" />
+      <input id="signupEmail" placeholder="Email" />
+      <input id="signupPassword" type="password" placeholder="Password" />
+      <input id="signupDob" type="date" />
+      <button id="signupBtn">Create Account</button>
+    </div>
+
+    <div class="card">
+      <h2>Log In</h2>
+      <input id="loginEmail" placeholder="Email" />
+      <input id="loginPassword" type="password" placeholder="Password" />
+      <button id="loginBtn">Log In</button>
+    </div>
+
+    <div class="card">
+      <h2>Check Current User</h2>
+      <button id="meBtn">Check /me</button>
+    </div>
+
+    <div class="card">
+      <h2>Output</h2>
+      <pre id="output">Waiting...</pre>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+    const output = document.getElementById("output");
+
+    function show(data) {
+      output.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById("signupBtn").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            displayName: document.getElementById("signupName").value,
+            email: document.getElementById("signupEmail").value,
+            password: document.getElementById("signupPassword").value,
+            dob: document.getElementById("signupDob").value
+          })
+        });
+
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("fitnessplan_token", data.token);
+        }
+        show(data);
+      } catch (err) {
+        show("Signup failed");
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value
+          })
+        });
+
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("fitnessplan_token", data.token);
+        }
+        show(data);
+      } catch (err) {
+        show("Login failed");
+      }
+    });
+
+    document.getElementById("meBtn").addEventListener("click", async () => {
+      try {
+        const token = localStorage.getItem("fitnessplan_token");
+        const res = await fetch(`${API_BASE}/me`, {
+          headers: {
+            "Authorization": `Bearer ${token || ""}`
+          }
+        });
+        const data = await res.json();
+        show(data);
+      } catch (err) {
+        show("Check /me failed");
+      }
+    });
+  </script>
+</body>
+</html>
