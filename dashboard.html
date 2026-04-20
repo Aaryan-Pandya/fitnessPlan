@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html">Planner</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+      <button id="logoutBtn" class="secondary">Log Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Your Dashboard</h1>
+      <p class="helper">See your account details and your current saved plan.</p>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Profile</h2>
+        <div class="info-list" id="profileBox">Loading profile...</div>
+      </section>
+
+      <section class="card">
+        <h2>Current Plan</h2>
+        <div id="planBox" class="empty-box">Loading your saved plan...</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+    const token = localStorage.getItem("fitnessplan_token");
+
+    if (!token) {
+      window.location.href = "./account-test.html";
+    }
+
+    const profileBox = document.getElementById("profileBox");
+    const planBox = document.getElementById("planBox");
+
+    async function apiGet(path) {
+      const res = await fetch(`${API}${path}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      return res.json();
+    }
+
+    function renderProfile(user) {
+      profileBox.innerHTML = `
+        <strong>Username:</strong> ${user.username}<br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Age:</strong> ${user.age}<br>
+        <strong>Age band:</strong> ${user.ageBand}<br>
+        <strong>Parent involved required:</strong> ${user.parentRequired ? "Yes" : "No"}
+      `;
+    }
+
+    function renderPlan(plan) {
+      if (!plan) {
+        planBox.className = "empty-box";
+        planBox.innerHTML = `
+          No plan saved yet.<br><br>
+          <a class="nav-btn" href="./index.html">Build a plan</a>
+        `;
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `
+        <div class="summary-box">${plan.summary}</div>
+        <div class="plan-section">
+          <h3>2-week schedule</h3>
+          <div class="schedule-grid" id="dashSchedule"></div>
+        </div>
+      `;
+
+      planBox.className = "";
+      planBox.innerHTML = "";
+      planBox.appendChild(wrap);
+
+      const scheduleWrap = wrap.querySelector("#dashSchedule");
+
+      plan.schedule.forEach((day) => {
+        const card = document.createElement("div");
+        card.className = `day-card ${day.type === "rest" ? "rest" : ""}`;
+        card.innerHTML = `
+          <div class="day-top">
+            <div>
+              <div class="day-date">${day.dateLabel}</div>
+              <div class="helper">${day.title}</div>
+            </div>
+            <span class="badge ${day.type === "rest" ? "rest" : ""}">${day.goal}</span>
+          </div>
+        `;
+
+        if (day.warmup && day.warmup.length) {
+          const block = document.createElement("div");
+          block.className = "session-block";
+          block.innerHTML = "<h4>Warm-up</h4>";
+          const ul = document.createElement("ul");
+          day.warmup.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          block.appendChild(ul);
+          card.appendChild(block);
+        }
+
+        const mainBlock = document.createElement("div");
+        mainBlock.className = "session-block";
+        mainBlock.innerHTML = "<h4>Main work</h4>";
+        const mainUl = document.createElement("ul");
+        day.mainWork.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          mainUl.appendChild(li);
+        });
+        mainBlock.appendChild(mainUl);
+        card.appendChild(mainBlock);
+
+        if (day.cooldown && day.cooldown.length) {
+          const block = document.createElement("div");
+          block.className = "session-block";
+          block.innerHTML = "<h4>Cooldown</h4>";
+          const ul = document.createElement("ul");
+          day.cooldown.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          block.appendChild(ul);
+          card.appendChild(block);
+        }
+
+        const note = document.createElement("div");
+        note.className = "helper";
+        note.textContent = day.note || "";
+        card.appendChild(note);
+
+        scheduleWrap.appendChild(card);
+      });
+    }
+
+    async function loadDashboard() {
+      const me = await apiGet("/me");
+      if (!me.ok) {
+        localStorage.removeItem("fitnessplan_token");
+        localStorage.removeItem("fitnessplan_user");
+        window.location.href = "./account-test.html";
+        return;
+      }
+
+      renderProfile(me.user);
+
+      const planData = await apiGet("/my-plan");
+      if (planData.ok) {
+        renderPlan(planData.plan || null);
+      } else {
+        renderPlan(null);
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await fetch(`${API}/logout`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      } catch {}
+      localStorage.removeItem("fitnessplan_token");
+      localStorage.removeItem("fitnessplan_user");
+      window.location.href = "./account-test.html";
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html> 
