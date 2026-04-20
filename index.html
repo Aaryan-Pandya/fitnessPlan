@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Account</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 35%),
+        linear-gradient(180deg, #0f172a 0%, #111827 35%, #172554 100%);
+      color: #e5eefc;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 18px;
+      font-size: 2.2rem;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.88);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.95);
+      color: white;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #2563eb, #4f46e5);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+    }
+
+    .secondary {
+      background: rgba(71, 85, 105, 0.95);
+    }
+
+    .secondary:hover {
+      background: rgba(100, 116, 139, 0.95);
+      filter: none;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .status {
+      min-height: 22px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #dbeafe;
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+
+    .ok {
+      color: #86efac;
+    }
+
+    .bad {
+      color: #fecaca;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>FitnessPlan</h1>
+
+    <div class="card" id="homeCard">
+      <h2>Account</h2>
+      <button id="showSignup">Sign Up</button>
+      <button id="showLogin" class="secondary">Log In</button>
+    </div>
+
+    <div class="card hidden" id="signupCard">
+      <h2>Create Your Account</h2>
+      <input id="signupName" placeholder="Username" />
+      <input id="signupEmail" type="email" placeholder="Email" />
+      <input id="signupPassword" type="password" placeholder="Password" />
+      <input id="signupDob" type="date" />
+      <button id="signupBtn">Create Account</button>
+      <button id="back1" class="secondary">Back</button>
+    </div>
+
+    <div class="card hidden" id="loginCard">
+      <h2>Welcome Back</h2>
+      <input id="loginEmail" type="email" placeholder="Email" />
+      <input id="loginPassword" type="password" placeholder="Password" />
+      <button id="loginBtn">Log In</button>
+      <button id="back2" class="secondary">Back</button>
+    </div>
+
+    <div class="status" id="statusText">Not signed in.</div>
+  </div>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+
+    const homeCard = document.getElementById("homeCard");
+    const signupCard = document.getElementById("signupCard");
+    const loginCard = document.getElementById("loginCard");
+    const statusText = document.getElementById("statusText");
+
+    function setStatus(message, type = "") {
+      statusText.textContent = message;
+      statusText.className = "status";
+      if (type) statusText.classList.add(type);
+    }
+
+    function showHome() {
+      homeCard.classList.remove("hidden");
+      signupCard.classList.add("hidden");
+      loginCard.classList.add("hidden");
+    }
+
+    function showSignup() {
+      homeCard.classList.add("hidden");
+      signupCard.classList.remove("hidden");
+      loginCard.classList.add("hidden");
+      setStatus("Create your account.", "");
+    }
+
+    function showLogin() {
+      homeCard.classList.add("hidden");
+      signupCard.classList.add("hidden");
+      loginCard.classList.remove("hidden");
+      setStatus("Log in to your account.", "");
+    }
+
+    async function apiRequest(path, body, method = "POST") {
+      const res = await fetch(`${API}${path}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: body ? JSON.stringify(body) : undefined
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: `Request failed with status ${res.status}` };
+      }
+
+      return { res, data };
+    }
+
+    document.getElementById("showSignup").addEventListener("click", showSignup);
+    document.getElementById("showLogin").addEventListener("click", showLogin);
+    document.getElementById("back1").addEventListener("click", showHome);
+    document.getElementById("back2").addEventListener("click", showHome);
+
+    document.getElementById("signupBtn").addEventListener("click", async () => {
+      setStatus("Creating account...", "");
+
+      try {
+        const { data } = await apiRequest("/signup", {
+          displayName: document.getElementById("signupName").value.trim(),
+          email: document.getElementById("signupEmail").value.trim(),
+          password: document.getElementById("signupPassword").value,
+          dob: document.getElementById("signupDob").value
+        });
+
+        if (data.ok) {
+          localStorage.setItem("fitnessplan_token", data.token);
+          localStorage.setItem("fitnessplan_user", JSON.stringify(data.user));
+          showHome();
+          setStatus(`Account created. Signed in as ${data.user.username}.`, "ok");
+        } else {
+          const extra = data.details ? `\n${data.details}` : "";
+          setStatus((data.error || "Signup failed.") + extra, "bad");
+        }
+      } catch (error) {
+        setStatus(`Signup failed.\n${String(error)}`, "bad");
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      setStatus("Logging in...", "");
+
+      try {
+        const { data } = await apiRequest("/login", {
+          email: document.getElementById("loginEmail").value.trim(),
+          password: document.getElementById("loginPassword").value
+        });
+
+        if (data.ok) {
+          localStorage.setItem("fitnessplan_token", data.token);
+          localStorage.setItem("fitnessplan_user", JSON.stringify(data.user));
+          showHome();
+          setStatus(`Logged in as ${data.user.username}.`, "ok");
+        } else {
+          const extra = data.details ? `\n${data.details}` : "";
+          setStatus((data.error || "Login failed.") + extra, "bad");
+        }
+      } catch (error) {
+        setStatus(`Login failed.\n${String(error)}`, "bad");
+      }
+    });
+
+    const savedUser = localStorage.getItem("fitnessplan_user");
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setStatus(`You are signed in as ${user.username}.`, "ok");
+      } catch {
+        setStatus("Not signed in.", "");
+      }
+    }
+  </script>
+</body>
+</html>
