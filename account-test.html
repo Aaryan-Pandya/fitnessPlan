@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Account</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Back to planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="account-wrap">
+    <section class="card" id="homeCard">
+      <h2>Account</h2>
+      <div class="button-row">
+        <button id="showSignup">Sign Up</button>
+        <button class="secondary" id="showLogin">Log In</button>
+      </div>
+      <div class="status-line" id="statusText">Not signed in.</div>
+    </section>
+
+    <section class="card hidden" id="signupCard">
+      <h2>Create your account</h2>
+
+      <label for="signupName">Username</label>
+      <input id="signupName" type="text" placeholder="Username" />
+
+      <label for="signupEmail">Email</label>
+      <input id="signupEmail" type="email" placeholder="Email" />
+
+      <label for="signupPassword">Password</label>
+      <input id="signupPassword" type="password" placeholder="Password" />
+
+      <label for="signupDob">Date of birth</label>
+      <input id="signupDob" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" />
+
+      <div class="button-row">
+        <button id="signupBtn">Create Account</button>
+        <button class="secondary" id="back1">Back</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="loginCard">
+      <h2>Welcome back</h2>
+
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" placeholder="Email" />
+
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" placeholder="Password" />
+
+      <div class="button-row">
+        <button id="loginBtn">Log In</button>
+        <button class="secondary" id="back2">Back</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+
+    const homeCard = document.getElementById("homeCard");
+    const signupCard = document.getElementById("signupCard");
+    const loginCard = document.getElementById("loginCard");
+    const statusText = document.getElementById("statusText");
+
+    function normalizeDateInput(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 8);
+      if (digits.length <= 4) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+    }
+
+    document.getElementById("signupDob").addEventListener("input", (e) => {
+      e.target.value = normalizeDateInput(e.target.value);
+    });
+
+    function setStatus(message, type = "") {
+      statusText.textContent = message;
+      statusText.className = "status-line";
+      if (type) statusText.classList.add(type);
+    }
+
+    function showHome() {
+      homeCard.classList.remove("hidden");
+      signupCard.classList.add("hidden");
+      loginCard.classList.add("hidden");
+    }
+
+    function showSignup() {
+      homeCard.classList.add("hidden");
+      signupCard.classList.remove("hidden");
+      loginCard.classList.add("hidden");
+      setStatus("Create your account.");
+    }
+
+    function showLogin() {
+      homeCard.classList.add("hidden");
+      signupCard.classList.add("hidden");
+      loginCard.classList.remove("hidden");
+      setStatus("Log in to your account.");
+    }
+
+    async function apiRequest(path, body, method = "POST", token = "") {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: `Request failed with status ${res.status}` };
+      }
+
+      return { res, data };
+    }
+
+    async function trySavePendingPlan() {
+      const pendingRaw = localStorage.getItem("fitnessplan_pending_plan");
+      const token = localStorage.getItem("fitnessplan_token");
+
+      if (!pendingRaw) return;
+
+      try {
+        const pending = JSON.parse(pendingRaw);
+        localStorage.setItem("fitnessplan_latest_plan", JSON.stringify(pending.plan));
+
+        if (!token) return;
+
+        const { data } = await apiRequest(
+          "/save-plan",
+          {
+            planName: pending.planName,
+            startDate: pending.startDate,
+            plan: pending.plan
+          },
+          "POST",
+          token
+        );
+
+        if (data.ok) {
+          localStorage.removeItem("fitnessplan_pending_plan");
+        }
+      } catch {}
+    }
+
+    async function finishAuth(data, message) {
+      localStorage.setItem("fitnessplan_token", data.token);
+      localStorage.setItem("fitnessplan_user", JSON.stringify(data.user));
+      setStatus(message, "ok");
+
+      await trySavePendingPlan();
+
+      setTimeout(() => {
+        window.location.href = "./dashboard.html";
+      }, 400);
+    }
+
+    document.getElementById("showSignup").addEventListener("click", showSignup);
+    document.getElementById("showLogin").addEventListener("click", showLogin);
+    document.getElementById("back1").addEventListener("click", showHome);
+    document.getElementById("back2").addEventListener("click", showHome);
+
+    document.getElementById("signupBtn").addEventListener("click", async () => {
+      setStatus("Creating account...");
+
+      try {
+        const { data } = await apiRequest("/signup", {
+          displayName: document.getElementById("signupName").value.trim(),
+          email: document.getElementById("signupEmail").value.trim(),
+          password: document.getElementById("signupPassword").value,
+          dob: document.getElementById("signupDob").value.trim()
+        });
+
+        if (data.ok) {
+          await finishAuth(data, `Account created. Signed in as ${data.user.username}.`);
+        } else {
+          const extra = data.details ? `\n${data.details}` : "";
+          setStatus((data.error || "Signup failed.") + extra, "bad");
+        }
+      } catch (error) {
+        setStatus(`Signup failed.\n${String(error)}`, "bad");
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      setStatus("Logging in...");
+
+      try {
+        const { data } = await apiRequest("/login", {
+          email: document.getElementById("loginEmail").value.trim(),
+          password: document.getElementById("loginPassword").value
+        });
+
+        if (data.ok) {
+          await finishAuth(data, `Logged in as ${data.user.username}.`);
+        } else {
+          const extra = data.details ? `\n${data.details}` : "";
+          setStatus((data.error || "Login failed.") + extra, "bad");
+        }
+      } catch (error) {
+        setStatus(`Login failed.\n${String(error)}`, "bad");
+      }
+    });
+
+    document.getElementById("signupPassword").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("signupBtn").click();
+    });
+
+    document.getElementById("loginPassword").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("loginBtn").click();
+    });
+
+    const savedUserRaw = localStorage.getItem("fitnessplan_user");
+    if (savedUserRaw) {
+      try {
+        const user = JSON.parse(savedUserRaw);
+        setStatus(`Already signed in as ${user.username}.`, "ok");
+      } catch {
+        setStatus("Not signed in.");
+      }
+    }
+  </script>
+</body>
+</html>
