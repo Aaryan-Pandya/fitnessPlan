@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Account</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Back to planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="account-wrap">
+    <section class="card" id="homeCard">
+      <h2>Account</h2>
+      <div class="button-row">
+        <button type="button" id="showSignup">Sign Up</button>
+        <button type="button" class="secondary" id="showLogin">Log In</button>
+      </div>
+      <div class="status-line" id="statusText">Not signed in.</div>
+    </section>
+
+    <section class="card hidden" id="signupCard">
+      <h2>Create your account</h2>
+
+      <label>Username</label>
+      <input id="signupName" type="text" placeholder="Username" />
+
+      <label>Email</label>
+      <input id="signupEmail" type="email" placeholder="Email" />
+
+      <label>Password</label>
+      <input id="signupPassword" type="password" placeholder="Password" />
+
+      <label>Date of birth</label>
+      <input id="signupDob" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" />
+
+      <div class="button-row">
+        <button type="button" id="signupBtn">Create Account</button>
+        <button type="button" class="secondary" id="back1">Back</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="loginCard">
+      <h2>Welcome back</h2>
+
+      <label>Email</label>
+      <input id="loginEmail" type="email" placeholder="Email" />
+
+      <label>Password</label>
+      <input id="loginPassword" type="password" placeholder="Password" />
+
+      <div class="button-row">
+        <button type="button" id="loginBtn">Log In</button>
+        <button type="button" class="secondary" id="back2">Back</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+  const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+
+  const homeCard = document.getElementById("homeCard");
+  const signupCard = document.getElementById("signupCard");
+  const loginCard = document.getElementById("loginCard");
+  const statusText = document.getElementById("statusText");
+
+  const showSignupBtn = document.getElementById("showSignup");
+  const showLoginBtn = document.getElementById("showLogin");
+  const signupBtn = document.getElementById("signupBtn");
+  const loginBtn = document.getElementById("loginBtn");
+  const back1Btn = document.getElementById("back1");
+  const back2Btn = document.getElementById("back2");
+
+  function setStatus(message, type = "") {
+    statusText.textContent = message;
+    statusText.className = "status-line";
+    if (type) statusText.classList.add(type);
+  }
+
+  function normalizeDateInput(value) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+  }
+
+  async function apiRequest(path, body, token = "") {
+    const headers = {
+      "Content-Type": "application/json"
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    const text = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = {
+        ok: false,
+        error: text || `Request failed with status ${response.status}`
+      };
+    }
+
+    return data;
+  }
+
+  async function trySavePendingPlan() {
+    const pendingRaw = localStorage.getItem("fitnessplan_pending_plan");
+    const token = localStorage.getItem("fitnessplan_token");
+
+    if (!pendingRaw) return;
+
+    try {
+      const pending = JSON.parse(pendingRaw);
+
+      localStorage.setItem("fitnessplan_latest_plan", JSON.stringify(pending.plan));
+
+      if (!token) return;
+
+      const data = await apiRequest(
+        "/save-plan",
+        {
+          planName: pending.planName,
+          startDate: pending.startDate,
+          plan: pending.plan
+        },
+        token
+      );
+
+      if (data.ok) {
+        localStorage.removeItem("fitnessplan_pending_plan");
+      }
+    } catch {
+      // Keep local saved plan even if backend save fails.
+    }
+  }
+
+  async function finishAuth(data, message) {
+    localStorage.setItem("fitnessplan_token", data.token);
+    localStorage.setItem("fitnessplan_user", JSON.stringify(data.user));
+
+    setStatus(message, "ok");
+
+    await trySavePendingPlan();
+
+    window.location.href = "./dashboard.html";
+  }
+
+  showSignupBtn.addEventListener("click", () => {
+    homeCard.classList.add("hidden");
+    signupCard.classList.remove("hidden");
+    loginCard.classList.add("hidden");
+    setStatus("Create your account.");
+  });
+
+  showLoginBtn.addEventListener("click", () => {
+    homeCard.classList.add("hidden");
+    signupCard.classList.add("hidden");
+    loginCard.classList.remove("hidden");
+    setStatus("Log in to your account.");
+  });
+
+  back1Btn.addEventListener("click", () => {
+    signupCard.classList.add("hidden");
+    loginCard.classList.add("hidden");
+    homeCard.classList.remove("hidden");
+    setStatus("Not signed in.");
+  });
+
+  back2Btn.addEventListener("click", () => {
+    signupCard.classList.add("hidden");
+    loginCard.classList.add("hidden");
+    homeCard.classList.remove("hidden");
+    setStatus("Not signed in.");
+  });
+
+  const signupDob = document.getElementById("signupDob");
+  signupDob.addEventListener("input", (e) => {
+    e.target.value = normalizeDateInput(e.target.value);
+  });
+
+  signupBtn.addEventListener("click", async () => {
+    setStatus("Creating account...");
+
+    const displayName = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    const dob = document.getElementById("signupDob").value.trim();
+
+    if (!displayName || !email || !password || !dob) {
+      setStatus("Please fill out username, email, password, and date of birth.", "bad");
+      return;
+    }
+
+    try {
+      const data = await apiRequest("/signup", {
+        displayName,
+        email,
+        password,
+        dob
+      });
+
+      if (data.ok) {
+        await finishAuth(data, `Account created. Signed in as ${data.user.username}.`);
+        return;
+      }
+
+      setStatus(data.details || data.error || "Signup failed.", "bad");
+    } catch (error) {
+      setStatus(`Signup failed: ${error.message}`, "bad");
+    }
+  });
+
+  loginBtn.addEventListener("click", async () => {
+    setStatus("Logging in...");
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    if (!email || !password) {
+      setStatus("Please enter email and password.", "bad");
+      return;
+    }
+
+    try {
+      const data = await apiRequest("/login", {
+        email,
+        password
+      });
+
+      if (data.ok) {
+        await finishAuth(data, `Logged in as ${data.user.username}.`);
+        return;
+      }
+
+      setStatus(data.details || data.error || "Login failed.", "bad");
+    } catch (error) {
+      setStatus(`Login failed: ${error.message}`, "bad");
+    }
+  });
+
+  document.getElementById("signupPassword").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      signupBtn.click();
+    }
+  });
+
+  document.getElementById("signupDob").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      signupBtn.click();
+    }
+  });
+
+  document.getElementById("loginPassword").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      loginBtn.click();
+    }
+  });
+
+  const savedUserRaw = localStorage.getItem("fitnessplan_user");
+  if (savedUserRaw) {
+    try {
+      const user = JSON.parse(savedUserRaw);
+      setStatus(`Already signed in as ${user.username}.`, "ok");
+    } catch {
+      setStatus("Not signed in.");
+    }
+  }
+});
+</script>
+</body>
+</html>
