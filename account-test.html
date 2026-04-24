@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Account</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .hidden { display: none !important; }
+
+    .account-wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 8px 20px 40px;
+    }
+
+    .status-box {
+      margin: 0 auto 16px;
+      max-width: 560px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #dbeafe;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .status-box.ok {
+      color: #86efac;
+      border-color: rgba(134, 239, 172, 0.35);
+    }
+
+    .status-box.bad {
+      color: #fecaca;
+      border-color: rgba(254, 202, 202, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Back to planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="account-wrap">
+    <div id="statusBox" class="status-box">Account page ready.</div>
+
+    <section class="card" id="homeCard">
+      <h2>Account</h2>
+      <div class="button-row">
+        <button type="button" onclick="showSignupCard()">Sign Up</button>
+        <button type="button" class="secondary" onclick="showLoginCard()">Log In</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="signupCard">
+      <h2>Create your account</h2>
+
+      <label for="signupName">Username</label>
+      <input id="signupName" type="text" placeholder="Username" />
+
+      <label for="signupEmail">Email</label>
+      <input id="signupEmail" type="email" placeholder="Email" />
+
+      <label for="signupPassword">Password</label>
+      <input id="signupPassword" type="password" placeholder="Password" />
+
+      <label for="signupDob">Date of birth</label>
+      <input id="signupDob" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" />
+
+      <div class="button-row">
+        <button type="button" id="signupBtn" onclick="handleSignup()">Create Account</button>
+        <button type="button" class="secondary" onclick="showHomeCard()">Back</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="loginCard">
+      <h2>Welcome back</h2>
+
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" placeholder="Email" />
+
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" placeholder="Password" />
+
+      <div class="button-row">
+        <button type="button" id="loginBtn" onclick="handleLogin()">Log In</button>
+        <button type="button" class="secondary" onclick="showHomeCard()">Back</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+
+    function setStatus(message, type = "") {
+      const box = document.getElementById("statusBox");
+      box.textContent = message;
+      box.className = "status-box";
+      if (type) box.classList.add(type);
+    }
+
+    function showHomeCard() {
+      document.getElementById("homeCard").classList.remove("hidden");
+      document.getElementById("signupCard").classList.add("hidden");
+      document.getElementById("loginCard").classList.add("hidden");
+      setStatus("Choose Sign Up or Log In.");
+    }
+
+    function showSignupCard() {
+      document.getElementById("homeCard").classList.add("hidden");
+      document.getElementById("signupCard").classList.remove("hidden");
+      document.getElementById("loginCard").classList.add("hidden");
+      setStatus("Fill out the fields, then click Create Account.");
+    }
+
+    function showLoginCard() {
+      document.getElementById("homeCard").classList.add("hidden");
+      document.getElementById("signupCard").classList.add("hidden");
+      document.getElementById("loginCard").classList.remove("hidden");
+      setStatus("Enter your email and password, then click Log In.");
+    }
+
+    function normalizeDateInput(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 8);
+      if (digits.length <= 4) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+    }
+
+    function isValidDob(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const d = new Date(`${value}T12:00:00`);
+      return !Number.isNaN(d.getTime());
+    }
+
+    async function apiRequest(path, body, token = "") {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(`${API}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = {
+          ok: false,
+          error: text || `Request failed with status ${response.status}`
+        };
+      }
+
+      return data;
+    }
+
+    async function trySavePendingPlan() {
+      const pendingRaw = localStorage.getItem("fitnessplan_pending_plan");
+      const token = localStorage.getItem("fitnessplan_token");
+
+      if (!pendingRaw) return;
+
+      try {
+        const pending = JSON.parse(pendingRaw);
+
+        if (pending.plan) {
+          localStorage.setItem("fitnessplan_latest_plan", JSON.stringify(pending.plan));
+        }
+
+        if (!token) return;
+
+        const data = await apiRequest(
+          "/save-plan",
+          {
+            planName: pending.planName,
+            startDate: pending.startDate,
+            plan: pending.plan
+          },
+          token
+        );
+
+        if (data.ok) {
+          localStorage.removeItem("fitnessplan_pending_plan");
+        }
+      } catch (error) {
+        console.error("Pending plan save failed:", error);
+      }
+    }
+
+    async function finishAuth(data, message) {
+      if (!data || !data.ok || !data.token || !data.user) {
+        setStatus("Login worked, but token or user data is missing.", "bad");
+        return;
+      }
+
+      localStorage.setItem("fitnessplan_token", data.token);
+      localStorage.setItem("fitnessplan_user", JSON.stringify(data.user));
+
+      setStatus(message, "ok");
+
+      await trySavePendingPlan();
+
+      window.location.href = "./dashboard.html";
+    }
+
+    async function handleSignup() {
+      const btn = document.getElementById("signupBtn");
+
+      const displayName = document.getElementById("signupName").value.trim();
+      const email = document.getElementById("signupEmail").value.trim().toLowerCase();
+      const password = document.getElementById("signupPassword").value;
+      const dob = document.getElementById("signupDob").value.trim();
+
+      if (!displayName || !email || !password || !dob) {
+        setStatus("Please fill out username, email, password, and date of birth.", "bad");
+        return;
+      }
+
+      if (!isValidDob(dob)) {
+        setStatus("Date of birth must be in YYYY-MM-DD format.", "bad");
+        return;
+      }
+
+      setStatus("Creating account...");
+      btn.disabled = true;
+
+      try {
+        const data = await apiRequest("/signup", {
+          displayName,
+          email,
+          password,
+          dob
+        });
+
+        if (data.ok) {
+          await finishAuth(data, `Account created. Signed in as ${data.user.username}.`);
+          return;
+        }
+
+        setStatus(data.details || data.error || "Signup failed.", "bad");
+      } catch (error) {
+        console.error("Signup failed:", error);
+        setStatus(`Signup failed: ${error.message}`, "bad");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function handleLogin() {
+      const btn = document.getElementById("loginBtn");
+
+      const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email || !password) {
+        setStatus("Please enter email and password.", "bad");
+        return;
+      }
+
+      setStatus("Logging in...");
+      btn.disabled = true;
+
+      try {
+        const data = await apiRequest("/login", {
+          email,
+          password
+        });
+
+        if (data.ok) {
+          await finishAuth(data, `Logged in as ${data.user.username}.`);
+          return;
+        }
+
+        setStatus(data.details || data.error || "Login failed.", "bad");
+      } catch (error) {
+        console.error("Login failed:", error);
+        setStatus(`Login failed: ${error.message}`, "bad");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const signupDob = document.getElementById("signupDob");
+      if (signupDob) {
+        signupDob.addEventListener("input", (e) => {
+          e.target.value = normalizeDateInput(e.target.value);
+        });
+      }
+
+      ["signupName", "signupEmail", "signupPassword", "signupDob"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSignup();
+          }
+        });
+      });
+
+      ["loginEmail", "loginPassword"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleLogin();
+          }
+        });
+      });
+
+      const savedUserRaw = localStorage.getItem("fitnessplan_user");
+      if (savedUserRaw) {
+        try {
+          const user = JSON.parse(savedUserRaw);
+          setStatus(`Already signed in as ${user.username}.`, "ok");
+        } catch {
+          setStatus("Account page ready.");
+        }
+      } else {
+        setStatus("Account page ready.");
+      }
+    });
+  </script>
+</body>
+</html>
