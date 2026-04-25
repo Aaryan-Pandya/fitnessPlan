@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Dashboard</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+      <button class="secondary" id="logoutBtn">Log Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Your Dashboard</h1>
+      <p class="helper">This week’s tracker unlocks only on the actual day.</p>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Profile</h2>
+        <div class="info-list" id="profileBox">Loading profile...</div>
+
+        <div class="streak-box" id="streakBox">
+          <strong>Workout streak:</strong> 0
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Plan</h2>
+        <div id="planSummaryBox" class="empty-box">Loading your plan...</div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>This week</h2>
+      <div id="weekTrackerBox" class="empty-box">Loading week tracker...</div>
+    </section>
+
+    <section class="card">
+      <h2>Calendar ahead</h2>
+      <div id="calendarBox" class="empty-box">Loading calendar...</div>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+    const token = localStorage.getItem("fitnessplan_token");
+
+    const profileBox = document.getElementById("profileBox");
+    const planSummaryBox = document.getElementById("planSummaryBox");
+    const weekTrackerBox = document.getElementById("weekTrackerBox");
+    const calendarBox = document.getElementById("calendarBox");
+    const streakBox = document.getElementById("streakBox");
+
+    function getUser() {
+      try {
+        return JSON.parse(localStorage.getItem("fitnessplan_user") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    function getPlan() {
+      try {
+        return JSON.parse(localStorage.getItem("fitnessplan_latest_plan") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    function getTrackerKey(plan) {
+      const user = getUser();
+      const userId = user?.email || "guest";
+      return `fitnessplan_tracker_${userId}_${plan.planName}_${plan.schedule?.[0]?.date || "local"}`;
+    }
+
+    function loadTracker(plan) {
+      try {
+        return JSON.parse(localStorage.getItem(getTrackerKey(plan)) || '{"days":{}}');
+      } catch {
+        return { days: {} };
+      }
+    }
+
+    function saveTracker(plan, tracker) {
+      localStorage.setItem(getTrackerKey(plan), JSON.stringify(tracker));
+    }
+
+    async function apiGet(path) {
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API}${path}`, { headers });
+      const text = await res.text();
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, error: text || "Invalid server response." };
+      }
+    }
+
+    function renderLoggedOutState() {
+      profileBox.innerHTML = `
+        <strong>Status:</strong> Not signed in<br>
+        <strong>Dashboard:</strong> Please log in to view your saved plan
+      `;
+      planSummaryBox.className = "empty-box";
+      planSummaryBox.textContent = "You are not signed in.";
+      weekTrackerBox.className = "empty-box";
+      weekTrackerBox.textContent = "Please log in to use the dashboard.";
+      calendarBox.className = "empty-box";
+      calendarBox.textContent = "Please log in to use the dashboard.";
+      streakBox.innerHTML = `<strong>Workout streak:</strong> 0`;
+    }
+
+    function renderProfile(user) {
+      profileBox.innerHTML = `
+        <strong>Username:</strong> ${user.username}<br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Age:</strong> ${user.age}<br>
+        <strong>Age band:</strong> ${user.ageBand}<br>
+        <strong>Parent or guardian required:</strong> ${user.parentRequired ? "Yes" : "No"}
+      `;
+    }
+
+    function splitIntoWeeks(schedule) {
+      const weeks = [];
+      for (let i = 0; i < schedule.length; i += 7) {
+        weeks.push(schedule.slice(i, i + 7));
+      }
+      return weeks;
+    }
+
+    function formatWeekRange(week) {
+      if (!week.length) return "Week";
+      return `Week of ${week[0].dateLabel} to ${week[week.length - 1].dateLabel}`;
+    }
+
+    function workoutLetter(index) {
+      return String.fromCharCode(65 + index);
+    }
+
+    function currentWeekIndex(plan) {
+      const weeks = splitIntoWeeks(plan.schedule || []);
+      const todayISO = new Date().toISOString().slice(0, 10);
+
+      const idx = weeks.findIndex((week) => week.some((day) => day.date === todayISO));
+      if (idx >= 0) return idx;
+
+      const firstDate = plan.schedule?.[0]?.date;
+      if (firstDate && todayISO < firstDate) return 0;
+
+      return Math.max(0, Math.min(weeks.length - 1, 1));
+    }
+
+    function getExerciseHistory(plan, tracker, exerciseId, beforeDate) {
+      const history = [];
+      (plan.schedule || [])
+        .filter((day) => day.date < beforeDate && day.type === "workout")
+        .forEach((day) => {
+          const dayLog = tracker.days?.[day.date]?.[exerciseId];
+          if (dayLog) history.push(dayLog);
+        });
+      return history;
+    }
+
+    function toNumber(value, fallback) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function getSafeExerciseDefaults(exercise) {
+      const type = exercise?.targetType || "reps";
+
+      if (type === "seconds") {
+        return {
+          start: toNumber(exercise?.start, 20),
+          max: toNumber(exercise?.max, 60),
+          step: toNumber(exercise?.step, 5),
+          sets: toNumber(exercise?.sets, 2)
+        };
+      }
+
+      if (type === "minutes") {
+        return {
+          start: toNumber(exercise?.start, 5),
+          max: toNumber(exercise?.max, 20),
+          step: toNumber(exercise?.step, 5),
+          sets: toNumber(exercise?.sets, 1)
+        };
+      }
+
+      return {
+        start: toNumber(exercise?.start, 5),
+        max: toNumber(exercise?.max, 10),
+        step: toNumber(exercise?.step, 1),
+        sets: toNumber(exercise?.sets, 3)
+      };
+    }
+
+    function formatTargetValue(value, targetType) {
+      if (targetType === "seconds") return `${value} sec`;
+      if (targetType === "minutes") return `${value} min`;
+      return `${value} reps`;
+    }
+
+    function getUserAgeForRules() {
+      const user = getUser();
+      return Number(user?.age) || 13;
+    }
+
+    function getExerciseCategory(exerciseName) {
+      const n = String(exerciseName || "").toLowerCase();
+
+      if (n.includes("pull")) return "pull";
+      if (n.includes("chin")) return "pull";
+      if (n.includes("row")) return "pull";
+
+      if (n.includes("push")) return "push";
+      if (n.includes("press")) return "push";
+      if (n.includes("shoulder")) return "push";
+
+      if (n.includes("squat")) return "legs";
+      if (n.includes("split")) return "legs";
+      if (n.includes("deadlift")) return "legs";
+      if (n.includes("hinge")) return "legs";
+      if (n.includes("bridge")) return "legs";
+      if (n.includes("hip thrust")) return "legs";
+
+      if (n.includes("plank")) return "core";
+
+      if (n.includes("run")) return "run";
+      if (n.includes("tempo")) return "run";
+      if (n.includes("repeat")) return "run";
+
+      return "general";
+    }
+
+    function countSuccessfulSessions(history, target) {
+      let count = 0;
+      history.forEach((entry) => {
+        if (Array.isArray(entry.values)) {
+          const ok = entry.values.every((v, i) => Number(v) >= Number(target[i] || 0));
+          if (ok) count += 1;
+        } else if (typeof entry.distance === "number" && target.length === 1) {
+          if (entry.distance > 0) count += 1;
+        }
+      });
+      return count;
+    }
+
+    function shouldRecommendMaxTest(exercise, history, goalState) {
+      const age = getUserAgeForRules();
+      const category = getExerciseCategory(exercise.name);
+      const sessions = history.length;
+      const current = goalState.targetArray?.[0] || 0;
+
+      if (category === "pull") {
+        if (goalState.advanceFlag && sessions >= 4) return true;
+        if (current >= 5 && sessions >= 6 && age >= 11) return true;
+        if (sessions >= 10 && current >= 4) return true;
+        return false;
+      }
+
+      if (category === "push") {
+        if (current >= 15 && age <= 12 && sessions >= 5) return true;
+        if (current >= 20 && age >= 13 && sessions >= 5) return true;
+        if (goalState.advanceFlag && sessions >= 4) return true;
+        return false;
+      }
+
+      if (category === "legs") {
+        return goalState.advanceFlag && sessions >= 6;
+      }
+
+      if (category === "core") {
+        if (exercise.targetType === "seconds" && current >= 60 && sessions >= 4) return true;
+        if (exercise.targetType === "seconds" && current >= 90 && age >= 13) return true;
+        return false;
+      }
+
+      if (category === "run") {
+        if (sessions >= 4) return true;
+        return false;
+      }
+
+      return sessions >= 8 && goalState.advanceFlag;
+    }
+
+    function getMaxTestText(exercise, history, goalState) {
+      const category = getExerciseCategory(exercise.name);
+
+      if (!shouldRecommendMaxTest(exercise, history, goalState)) {
+        return exercise.maxTestRule || "No max test yet.";
+      }
+
+      if (category === "pull") {
+        return "Recommended now: test one clean max set of pull-ups or chin-ups after a full warm-up.";
+      }
+
+      if (category === "push") {
+        return "Recommended now: test one clean max set of your current push-up variation.";
+      }
+
+      if (category === "core") {
+        return "Recommended now: test one clean plank max hold.";
+      }
+
+      if (category === "run") {
+        return "Recommended now: do a controlled time trial soon. Use a mile check or short 5K check, not an all-out random sprint.";
+      }
+
+      return "Recommended now: perform a controlled max test only after a full warm-up.";
+    }
+
+    function getLastLoadOrAssist(history) {
+      for (let i = history.length - 1; i >= 0; i -= 1) {
+        const entry = history[i];
+        if (entry && entry.loadValue !== undefined && entry.loadType) {
+          return {
+            loadType: entry.loadType,
+            loadValue: Number(entry.loadValue) || 0
+          };
+        }
+      }
+      return null;
+    }
+
+    function computeNextGoal(exercise, history) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const progressionType = exercise.progressionType || "double";
+      const category = getExerciseCategory(exercise.name);
+
+      let current = safe.start;
+      let advanceFlag = false;
+
+      if (category === "run") {
+        const result = {
+          targetArray: Array(safe.sets).fill(current),
+          advanceFlag: false
+        };
+        result.maxTestDue = shouldRecommendMaxTest(
+          { ...exercise, ...safe },
+          history,
+          result
+        );
+        return result;
+      }
+
+      if (progressionType === "static") {
+        const result = {
+          targetArray: Array(safe.sets).fill(current),
+          advanceFlag: false
+        };
+        result.maxTestDue = shouldRecommendMaxTest(
+          { ...exercise, ...safe },
+          history,
+          result
+        );
+        return result;
+      }
+
+      history.forEach((entry) => {
+        if (!Array.isArray(entry.values)) return;
+
+        const target = Array(safe.sets).fill(current);
+        const success = entry.values.every((v, i) => Number(v) >= Number(target[i] || 0));
+
+        if (!success) return;
+
+        if (progressionType === "ladder") {
+          if (current < safe.max) {
+            current += safe.step;
+          } else {
+            advanceFlag = true;
+            current = safe.start;
+          }
+          return;
+        }
+
+        if (progressionType === "hold") {
+          if (current < safe.max) current += safe.step;
+          return;
+        }
+
+        if (progressionType === "double") {
+          if (current < safe.max) {
+            current += safe.step;
+          } else {
+            advanceFlag = true;
+            current = safe.start;
+          }
+        }
+      });
+
+      const result = {
+        targetArray: Array(safe.sets).fill(current),
+        advanceFlag
+      };
+
+      result.maxTestDue = shouldRecommendMaxTest(
+        { ...exercise, ...safe },
+        history,
+        result
+      );
+
+      return result;
+    }
+
+    function getStatusText(exercise, goalState) {
+      const category = getExerciseCategory(exercise.name);
+
+      if (goalState.maxTestDue) return "Max test ready";
+
+      if (goalState.advanceFlag) {
+        if (category === "pull") return "Progress assistance/load";
+        if (category === "push") return "Progress load";
+        if (category === "legs") return "Add load";
+        if (category === "core") return "Increase hold";
+        if (category === "run") return "Progress run";
+        return "Progress ready";
+      }
+
+      return "Current target";
+    }
+
+    function getNextLoadSuggestion(exercise, history, goalState) {
+      const category = getExerciseCategory(exercise.name);
+      const last = getLastLoadOrAssist(history);
+
+      if (!last) return "No previous load logged yet.";
+
+      if (!goalState.advanceFlag) {
+        if (last.loadType === "assistance") {
+          return `Keep assistance at ${last.loadValue} lb unless all sets were clearly easy.`;
+        }
+        return `Keep load at ${last.loadValue} lb unless all sets were clearly easy.`;
+      }
+
+      if (category === "pull" && last.loadType === "assistance") {
+        const nextAssist = Math.max(0, last.loadValue - 5);
+        return `Next time: reduce assistance from ${last.loadValue} lb to ${nextAssist} lb.`;
+      }
+
+      if (last.loadType === "load") {
+        const bump = category === "legs" ? 5 : 2.5;
+        return `Next time: increase load from ${last.loadValue} lb to ${last.loadValue + bump} lb if form stays clean.`;
+      }
+
+      if (last.loadType === "assistance") {
+        const nextAssist = Math.max(0, last.loadValue - 5);
+        return `Next time: reduce assistance from ${last.loadValue} lb to ${nextAssist} lb.`;
+      }
+
+      return "Progress load only when all sets are clean.";
+    }
+
+    function renderPlanSummary(plan) {
+      if (!plan) {
+        planSummaryBox.className = "empty-box";
+        planSummaryBox.textContent = "No plan found yet.";
+        return;
+      }
+
+      planSummaryBox.className = "summary-box";
+      planSummaryBox.textContent = plan.summary || "Plan loaded.";
+    }
+
+    function createRunningTracker(plan, tracker, day, exercise) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const history = getExerciseHistory(plan, tracker, exercise.id, day.date);
+      const goalState = computeNextGoal({ ...exercise, ...safe }, history);
+      const todayISO = new Date().toISOString().slice(0, 10);
+      const unlocked = day.date === todayISO;
+      const existing = tracker.days?.[day.date]?.[exercise.id] || {};
+
+      const wrap = document.createElement("div");
+      wrap.className = "tracker-exercise";
+
+      const head = document.createElement("div");
+      head.className = "tracker-ex-head";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="tracker-ex-name">${exercise.name || "Run"}</div>
+        <div class="tracker-meta">
+          <span class="meta-pill tempo">Tempo ${exercise.tempo || "Controlled"}</span>
+          <span class="meta-pill">Time goal ${safe.start} min</span>
+          <span class="meta-pill">Log distance + notes</span>
+        </div>
+      `;
+
+      const right = document.createElement("div");
+      right.className = `tracker-chip ${goalState.maxTestDue ? "ready" : ""}`;
+      right.textContent = getStatusText(exercise, goalState);
+
+      head.appendChild(left);
+      head.appendChild(right);
+      wrap.appendChild(head);
+
+      const block = document.createElement("div");
+      block.className = "tracker-table";
+      block.innerHTML = `
+        <div class="tracker-row header">
+          <div>Time</div>
+          <div>Goal</div>
+          <div>Log</div>
+        </div>
+        <div class="tracker-row">
+          <div>Main</div>
+          <div class="tracker-goal">${safe.start} min</div>
+          <div><input class="small-input" data-run-time-day="${day.date}" data-run-time-ex="${exercise.id}" type="text" inputmode="decimal" value="${existing.timeDone || safe.start}" ${unlocked ? "" : "disabled"} /></div>
+        </div>
+      `;
+      wrap.appendChild(block);
+
+      const distanceRow = document.createElement("div");
+      distanceRow.className = "small-note";
+      distanceRow.innerHTML = `
+        <label>Distance covered</label>
+        <input class="small-input" data-run-distance-day="${day.date}" data-run-distance-ex="${exercise.id}" type="text" inputmode="decimal" placeholder="Example: 0.78 miles" value="${existing.distance ?? ""}" ${unlocked ? "" : "disabled"} />
+      `;
+      wrap.appendChild(distanceRow);
+
+      const notesRow = document.createElement("div");
+      notesRow.className = "small-note";
+      notesRow.innerHTML = `
+        <label>Notes</label>
+        <input class="small-input" data-run-notes-day="${day.date}" data-run-notes-ex="${exercise.id}" type="text" placeholder="How it felt, surface, weather, hills, etc." value="${existing.notes || ""}" ${unlocked ? "" : "disabled"} />
+      `;
+      wrap.appendChild(notesRow);
+
+      const help = document.createElement("div");
+      help.className = "tracker-help";
+      help.innerHTML = `
+        <strong>Goal:</strong> run for ${safe.start} minutes at the planned effort, then log your distance.<br>
+        <strong>Progression:</strong> ${exercise.progressionSummary || "Keep the time fixed and compare how much distance you cover. More distance at the same effort is progress."}<br>
+        <strong>Ready when:</strong> ${exercise.readyRule || "The same time feels smoother and distance improves."}<br>
+        <strong>Max test:</strong> ${getMaxTestText(exercise, history, goalState)}
+      `;
+      wrap.appendChild(help);
+
+      if (!unlocked) {
+        const lock = document.createElement("div");
+        lock.className = "lock-note";
+        lock.textContent = `This unlocks on ${day.dateLabel}.`;
+        wrap.appendChild(lock);
+      }
+
+      return wrap;
+    }
+
+    function createStrengthTracker(plan, tracker, day, exercise) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const mergedExercise = { ...exercise, ...safe };
+
+      const history = getExerciseHistory(plan, tracker, exercise.id, day.date);
+      const goalState = computeNextGoal(mergedExercise, history);
+
+      const todayISO = new Date().toISOString().slice(0, 10);
+      const unlocked = day.date === todayISO;
+      const existing = tracker.days?.[day.date]?.[exercise.id] || {};
+
+      const wrap = document.createElement("div");
+      wrap.className = "tracker-exercise";
+
+      const head = document.createElement("div");
+      head.className = "tracker-ex-head";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="tracker-ex-name">${mergedExercise.name || "Exercise"}</div>
+        <div class="tracker-meta">
+          <span class="meta-pill tempo">Tempo ${mergedExercise.tempo || "Controlled"}</span>
+          <span class="meta-pill">Rest ${mergedExercise.rest || "60 sec"}</span>
+          <span class="meta-pill">${mergedExercise.targetType === "reps" ? "Reps" : mergedExercise.targetType === "seconds" ? "Seconds" : "Minutes"}</span>
+        </div>
+      `;
+
+      const right = document.createElement("div");
+      right.className = `tracker-chip ${goalState.advanceFlag || goalState.maxTestDue ? "ready" : ""}`;
+      right.textContent = getStatusText(mergedExercise, goalState);
+
+      head.appendChild(left);
+      head.appendChild(right);
+      wrap.appendChild(head);
+
+      const table = document.createElement("div");
+      table.className = "tracker-table";
+
+      const header = document.createElement("div");
+      header.className = "tracker-row header";
+      header.innerHTML = `<div>Set</div><div>Goal</div><div>Log</div>`;
+      table.appendChild(header);
+
+      const existingValues = existing.values || [];
+
+      goalState.targetArray.forEach((target, i) => {
+        const row = document.createElement("div");
+        row.className = "tracker-row";
+        row.innerHTML = `
+          <div>Set ${i + 1}</div>
+          <div class="tracker-goal">${formatTargetValue(target, mergedExercise.targetType)}</div>
+          <div><input class="small-input" data-day="${day.date}" data-ex="${exercise.id}" data-set="${i}" type="text" inputmode="numeric" value="${existingValues[i] || ""}" ${unlocked ? "" : "disabled"} /></div>
+        `;
+        table.appendChild(row);
+      });
+
+      wrap.appendChild(table);
+
+      const loadType = existing.loadType || "load";
+      const loadValue = existing.loadValue ?? "";
+
+      const loadBlock = document.createElement("div");
+      loadBlock.className = "small-note";
+      loadBlock.innerHTML = `
+        <label>Assistance or load</label>
+        <div style="display:grid; grid-template-columns: 150px 1fr; gap:10px;">
+          <select class="small-input" data-load-type-day="${day.date}" data-load-type-ex="${exercise.id}" ${unlocked ? "" : "disabled"}>
+            <option value="load" ${loadType === "load" ? "selected" : ""}>Load</option>
+            <option value="assistance" ${loadType === "assistance" ? "selected" : ""}>Assistance</option>
+          </select>
+          <input class="small-input" data-load-value-day="${day.date}" data-load-value-ex="${exercise.id}" type="text" inputmode="decimal" placeholder="Example: 35" value="${loadValue}" ${unlocked ? "" : "disabled"} />
+        </div>
+      `;
+      wrap.appendChild(loadBlock);
+
+      const successCount = countSuccessfulSessions(history, goalState.targetArray);
+
+      const help = document.createElement("div");
+      help.className = "tracker-help";
+      help.innerHTML = `
+        <strong>Starter:</strong> ${formatTargetValue(safe.start, mergedExercise.targetType)}<br>
+        <strong>Progression:</strong> ${mergedExercise.progressionSummary || "Build clean reps or time, then progress when all sets are completed cleanly."}<br>
+        <strong>Ready when:</strong> ${mergedExercise.readyRule || "All sets hit the target cleanly."}<br>
+        <strong>Success count:</strong> ${successCount} successful comparable session(s)<br>
+        <strong>Next load suggestion:</strong> ${getNextLoadSuggestion(mergedExercise, history, goalState)}<br>
+        <strong>Max test:</strong> ${getMaxTestText(mergedExercise, history, goalState)}
+      `;
+      wrap.appendChild(help);
+
+      if (!unlocked) {
+        const lock = document.createElement("div");
+        lock.className = "lock-note";
+        lock.textContent = `This unlocks on ${day.dateLabel}.`;
+        wrap.appendChild(lock);
+      }
+
+      return wrap;
+    }
+
+    function createExerciseTracker(plan, tracker, day, exercise) {
+      const category = getExerciseCategory(exercise.name);
+      if (category === "run") {
+        return createRunningTracker(plan, tracker, day, exercise);
+      }
+      return createStrengthTracker(plan, tracker, day, exercise);
+    }
+
+    function countWorkoutStreak(plan, tracker) {
+      const todayISO = new Date().toISOString().slice(0, 10);
+
+      const workoutDates = (plan.schedule || [])
+        .filter((day) => day.type === "workout" && day.date <= todayISO)
+        .map((day) => day.date);
+
+      let streak = 0;
+      for (let i = workoutDates.length - 1; i >= 0; i -= 1) {
+        const dayLog = tracker.days?.[workoutDates[i]];
+        const done = dayLog && Object.keys(dayLog).length > 0;
+        if (done) streak += 1;
+        else break;
+      }
+
+      return streak;
+    }
+
+    function renderWeekTracker(plan) {
+      const tracker = loadTracker(plan);
+      const weeks = splitIntoWeeks(plan.schedule || []);
+      const week = weeks[currentWeekIndex(plan)] || [];
+
+      weekTrackerBox.className = "";
+      weekTrackerBox.innerHTML = "";
+
+      const section = document.createElement("section");
+      section.className = "week-section";
+
+      const title = document.createElement("div");
+      title.className = "week-title";
+      title.textContent = formatWeekRange(week);
+      section.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "week-grid";
+
+      let letterIndex = 0;
+
+      week.forEach((day) => {
+        const card = document.createElement("div");
+        card.className = `day-card ${day.type === "rest" ? "rest" : ""}`;
+
+        let dayLabel = "Rest";
+        if (day.type === "workout") {
+          dayLabel = workoutLetter(letterIndex);
+          letterIndex += 1;
+        }
+
+        card.innerHTML = `
+          <div class="day-top">
+            <div>
+              <div class="day-letter">Day ${dayLabel}</div>
+              <div class="day-date">${day.dateLabel}</div>
+              <div class="helper">${day.title}</div>
+            </div>
+            <span class="badge ${day.type === "rest" ? "rest" : ""}">${day.goal}</span>
+          </div>
+        `;
+
+        if (day.type === "rest") {
+          const p = document.createElement("div");
+          p.className = "helper";
+          p.textContent = "Recovery day.";
+          card.appendChild(p);
+          grid.appendChild(card);
+          return;
+        }
+
+        if (day.warmup?.length) {
+          const warm = document.createElement("div");
+          warm.className = "session-block";
+          warm.innerHTML = "<h4>Warm-up</h4>";
+          const ul = document.createElement("ul");
+          day.warmup.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          warm.appendChild(ul);
+          card.appendChild(warm);
+        }
+
+        (day.exercises || []).forEach((exercise) => {
+          card.appendChild(createExerciseTracker(plan, tracker, day, exercise));
+        });
+
+        if (day.cooldown?.length) {
+          const cool = document.createElement("div");
+          cool.className = "session-block";
+          cool.innerHTML = "<h4>Cooldown</h4>";
+          const ul = document.createElement("ul");
+          day.cooldown.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          cool.appendChild(ul);
+          card.appendChild(cool);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "tracker-actions";
+
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const unlocked = day.date === todayISO;
+
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save day log";
+        if (!unlocked) saveBtn.disabled = true;
+
+        saveBtn.addEventListener("click", () => {
+          const nextTracker = loadTracker(plan);
+          if (!nextTracker.days[day.date]) nextTracker.days[day.date] = {};
+
+          const repInputs = card.querySelectorAll("input[data-day]");
+          const runTimeInputs = card.querySelectorAll("input[data-run-time-day]");
+          const runDistanceInputs = card.querySelectorAll("input[data-run-distance-day]");
+          const runNotesInputs = card.querySelectorAll("input[data-run-notes-day]");
+          const loadTypeSelects = card.querySelectorAll("select[data-load-type-day]");
+          const loadValueInputs = card.querySelectorAll("input[data-load-value-day]");
+
+          const grouped = {};
+
+          repInputs.forEach((input) => {
+            const exId = input.dataset.ex;
+            if (!grouped[exId]) grouped[exId] = {};
+            if (!grouped[exId].values) grouped[exId].values = [];
+            grouped[exId].values[Number(input.dataset.set)] = Number(input.value || 0);
+          });
+
+          runTimeInputs.forEach((input) => {
+            const exId = input.dataset.runTimeEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].timeDone = Number(input.value || 0);
+          });
+
+          runDistanceInputs.forEach((input) => {
+            const exId = input.dataset.runDistanceEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].distance = Number(input.value || 0);
+          });
+
+          runNotesInputs.forEach((input) => {
+            const exId = input.dataset.runNotesEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].notes = input.value || "";
+          });
+
+          loadTypeSelects.forEach((select) => {
+            const exId = select.dataset.loadTypeEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].loadType = select.value;
+          });
+
+          loadValueInputs.forEach((input) => {
+            const exId = input.dataset.loadValueEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].loadValue = Number(input.value || 0);
+          });
+
+          Object.entries(grouped).forEach(([exId, entry]) => {
+            nextTracker.days[day.date][exId] = {
+              ...entry,
+              savedAt: new Date().toISOString()
+            };
+          });
+
+          saveTracker(plan, nextTracker);
+          renderWeekTracker(plan);
+          renderCalendar(plan);
+          streakBox.innerHTML = `<strong>Workout streak:</strong> ${countWorkoutStreak(plan, nextTracker)}`;
+        });
+
+        actions.appendChild(saveBtn);
+        card.appendChild(actions);
+
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      weekTrackerBox.appendChild(section);
+
+      streakBox.innerHTML = `<strong>Workout streak:</strong> ${countWorkoutStreak(plan, tracker)}`;
+    }
+
+    function renderCalendar(plan) {
+      const weeks = splitIntoWeeks(plan.schedule || []);
+
+      calendarBox.className = "";
+      calendarBox.innerHTML = "";
+
+      weeks.forEach((week) => {
+        const section = document.createElement("section");
+        section.className = "week-section";
+
+        const title = document.createElement("div");
+        title.className = "week-title";
+        title.textContent = formatWeekRange(week);
+        section.appendChild(title);
+
+        const grid = document.createElement("div");
+        grid.className = "calendar-grid";
+
+        let letterIndex = 0;
+
+        week.forEach((day) => {
+          const card = document.createElement("div");
+          card.className = "calendar-card";
+
+          let dayLabel = "Rest";
+          if (day.type === "workout") {
+            dayLabel = workoutLetter(letterIndex);
+            letterIndex += 1;
+          }
+
+          const exerciseNames = (day.exercises || []).map((ex) => ex.name).join(", ") || "Recovery";
+
+          card.innerHTML = `
+            <div class="day-top">
+              <div>
+                <div class="day-date">${day.dateLabel}</div>
+                <div class="helper">Day ${dayLabel}</div>
+              </div>
+              <span class="badge ${day.type === "rest" ? "rest" : ""}">${day.goal}</span>
+            </div>
+            <div class="helper">${exerciseNames}</div>
+          `;
+
+          grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        calendarBox.appendChild(section);
+      });
+    }
+
+    async function loadDashboard() {
+      const user = getUser();
+
+      if (!token || !user) {
+        renderLoggedOutState();
+        return;
+      }
+
+      try {
+        const me = await apiGet("/me");
+        if (me.ok && me.user) {
+          localStorage.setItem("fitnessplan_user", JSON.stringify(me.user));
+          renderProfile(me.user);
+        } else {
+          renderProfile(user);
+        }
+      } catch {
+        renderProfile(user);
+      }
+
+      let plan = getPlan();
+
+      try {
+        const planData = await apiGet("/my-plan");
+        if (planData.ok && planData.plan) {
+          plan = planData.plan;
+          localStorage.setItem("fitnessplan_latest_plan", JSON.stringify(plan));
+        }
+      } catch {}
+
+      renderPlanSummary(plan);
+
+      if (!plan) {
+        weekTrackerBox.className = "empty-box";
+        weekTrackerBox.textContent = "No plan found yet.";
+        calendarBox.className = "empty-box";
+        calendarBox.textContent = "No plan found yet.";
+        return;
+      }
+
+      renderWeekTracker(plan);
+      renderCalendar(plan);
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (token) {
+        try {
+          await fetch(`${API}/logout`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch {}
+      }
+      
+      localStorage.removeItem("fitnessplan_token");
+      localStorage.removeItem("fitnessplan_user");
+
+      window.location.href = "./account-test.html";
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>
