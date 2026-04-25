@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Planner</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .planner-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .planner-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .field-help {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    .status-box {
+      margin-top: 14px;
+      min-height: 22px;
+      line-height: 1.45;
+      color: #dbeafe;
+      white-space: pre-wrap;
+    }
+
+    .status-box.ok {
+      color: #bbf7d0;
+    }
+
+    .status-box.bad {
+      color: #fecaca;
+    }
+
+    .preview-summary {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      color: #e5eefc;
+      line-height: 1.55;
+      min-height: 80px;
+    }
+
+    .preview-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .preview-week {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .preview-week-title {
+      font-weight: 900;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #f8fbff;
+    }
+
+    .preview-day {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      margin-top: 10px;
+    }
+
+    .preview-day-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .preview-day-name {
+      font-weight: 800;
+      color: #f8fbff;
+    }
+
+    .preview-day-date {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      margin-top: 2px;
+    }
+
+    .preview-badge {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.18);
+      color: #dbeafe;
+      font-size: 0.8rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .preview-badge.warn {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+    }
+
+    .preview-exercise-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #e5eefc;
+      line-height: 1.5;
+    }
+
+    .planner-note {
+      margin-top: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      font-size: 0.93rem;
+    }
+
+    @media (max-width: 960px) {
+      .planner-grid,
+      .planner-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Plan Builder</h1>
+      <p class="helper">
+        Build the next training block. This version also inserts deloads, intervention weeks, and safe retests when the previous data says they are needed.
+      </p>
+    </section>
+
+    <section class="planner-grid">
+      <section class="card">
+        <h2>Inputs</h2>
+
+        <div class="planner-form-grid">
+          <div>
+            <label for="startDate">Plan start date</label>
+            <input id="startDate" type="date" />
+          </div>
+
+          <div>
+            <label for="age">Age</label>
+            <input id="age" type="text" inputmode="numeric" placeholder="Example: 13" />
+          </div>
+
+          <div>
+            <label for="primaryGoal">Primary goal</label>
+            <select id="primaryGoal">
+              <option value="5k">5K focus</option>
+              <option value="mile">Mile focus</option>
+              <option value="mixed">Mixed running + strength</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="daysPerWeek">Training days per week</label>
+            <select id="daysPerWeek">
+              <option value="5">5 days</option>
+              <option value="4">4 days</option>
+              <option value="3">3 days</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="equipment">Equipment</label>
+            <select id="equipment">
+              <option value="home">Bodyweight + dumbbells</option>
+              <option value="gym">Gym access</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="sessionLength">Session length</label>
+            <select id="sessionLength">
+              <option value="short">Short</option>
+              <option value="normal" selected>Normal</option>
+              <option value="long">Long</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="canPullUp">Can you do a pull-up?</label>
+            <select id="canPullUp">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="pullUpMax">Best clean pull-ups</label>
+            <input id="pullUpMax" type="text" inputmode="numeric" placeholder="Example: 3" />
+          </div>
+
+          <div>
+            <label for="pushUpMax">Best clean push-up set</label>
+            <input id="pushUpMax" type="text" inputmode="numeric" placeholder="Example: 12" />
+          </div>
+
+          <div>
+            <label for="plankMax">Best clean plank hold (seconds)</label>
+            <input id="plankMax" type="text" inputmode="numeric" placeholder="Example: 60" />
+          </div>
+
+          <div>
+            <label for="runBlockMinutes">Fixed run block (minutes)</label>
+            <input id="runBlockMinutes" type="text" inputmode="numeric" placeholder="Example: 10" />
+            <div class="field-help">Used for easy run distance tracking and run retests.</div>
+          </div>
+
+          <div>
+            <label for="runBlockDistance">Best distance in that time</label>
+            <input id="runBlockDistance" type="text" inputmode="decimal" placeholder="Example: 0.82" />
+          </div>
+
+          <div class="full-span">
+            <label for="mileTime">Current mile time (optional)</label>
+            <input id="mileTime" type="text" placeholder="Example: 7:42" />
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="generatePlanBtn" type="button">Generate Plan</button>
+          <button id="savePlanBtn" type="button" class="secondary">Save Plan</button>
+        </div>
+
+        <div id="plannerStatus" class="status-box">Fill the form, then generate the plan.</div>
+      </section>
+
+      <section class="card">
+        <h2>Plan Summary</h2>
+        <div id="planSummaryPreview" class="preview-summary">No plan generated yet.</div>
+        <div class="planner-note">
+          The app uses past records, plateaus, and stale PRs to decide whether the next block should include a deload or intervention week.
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>Schedule Preview</h2>
+      <div id="schedulePreview" class="preview-list"></div>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>
