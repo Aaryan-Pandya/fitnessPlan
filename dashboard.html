@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Dashboard</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+      <button class="secondary" id="logoutBtn" type="button">Log Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Your Dashboard</h1>
+      <p class="helper">
+        Readiness is required before logging. Low readiness changes the session instead of pretending recovery does not exist.
+      </p>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Profile</h2>
+        <div id="profileBox" class="info-list">Loading profile...</div>
+        <div id="streakBox" class="streak-box"><strong>Workout streak:</strong> 0</div>
+      </section>
+
+      <section class="card">
+        <h2>Current Plan</h2>
+        <div id="currentPlanBox" class="empty-box">Loading your plan...</div>
+      </section>
+    </section>
+
+    <section id="interventionBanner" class="banner hidden"></section>
+
+    <section class="card">
+      <h2>Today</h2>
+      <div id="todayWorkoutBox" class="empty-box">Loading today’s workout...</div>
+      <div id="todayReadinessBox"></div>
+      <div id="todayLogBox"></div>
+      <div id="todayLogStatus" class="status-box">Waiting for today’s workout.</div>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Records & PRs</h2>
+        <div id="recordsBox" class="empty-box">Loading records...</div>
+      </section>
+
+      <section class="card">
+        <h2>Retest Recommendations</h2>
+        <div id="retestsBox" class="empty-box">Loading retest recommendations...</div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>Progress Charts</h2>
+      <div id="chartsBox" class="empty-box">Loading charts...</div>
+    </section>
+
+    <section class="card">
+      <h2>This Week</h2>
+      <div id="weekTrackerBox" class="empty-box">Loading week tracker...</div>
+    </section>
+
+    <section class="card">
+      <h2>Calendar Ahead</h2>
+      <div id="calendarBox" class="empty-box">Loading calendar...</div>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>

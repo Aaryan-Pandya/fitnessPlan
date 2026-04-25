@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Planner</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body data-page="planner">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">FP</span>
+      <span>FitnessPlan</span>
+    </div>
+
+    <div class="topbar-actions">
+      <a class="nav-btn active" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card hero-card">
+      <div>
+        <p class="eyebrow">Youth friendly training system</p>
+        <h1>Plan Builder</h1>
+        <p class="helper">
+          Generate the next 4-week block. FitnessPlan uses running, strength, readiness, records, plateau checks, intervention weeks, and safe retests.
+        </p>
+      </div>
+
+      <div class="hero-pills">
+        <span>5K primary</span>
+        <span>Mile support</span>
+        <span>Strength included</span>
+        <span>No risky 1RM tests</span>
+      </div>
+    </section>
+
+    <section class="planner-grid">
+      <section class="card">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Inputs</p>
+            <h2>Build next block</h2>
+          </div>
+          <span class="mini-pill">4 weeks</span>
+        </div>
+
+        <div class="planner-form-grid">
+          <div>
+            <label for="startDate">Plan start date</label>
+            <input id="startDate" type="date" />
+          </div>
+
+          <div>
+            <label for="age">Age</label>
+            <input id="age" type="text" inputmode="numeric" placeholder="Example: 13" />
+          </div>
+
+          <div>
+            <label for="primaryGoal">Primary goal</label>
+            <select id="primaryGoal">
+              <option value="5k">5K focus</option>
+              <option value="mile">Mile focus</option>
+              <option value="mixed">Mixed running + strength</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="daysPerWeek">Training days per week</label>
+            <select id="daysPerWeek">
+              <option value="5">5 days</option>
+              <option value="4">4 days</option>
+              <option value="3">3 days</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="equipment">Equipment</label>
+            <select id="equipment">
+              <option value="home">Bodyweight + dumbbells</option>
+              <option value="gym">Gym access</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="sessionLength">Session length</label>
+            <select id="sessionLength">
+              <option value="short">Short</option>
+              <option value="normal" selected>Normal</option>
+              <option value="long">Long</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="canPullUp">Can you do a pull-up?</label>
+            <select id="canPullUp">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="pullUpMax">Best clean pull-ups</label>
+            <input id="pullUpMax" type="text" inputmode="numeric" placeholder="Example: 3" />
+          </div>
+
+          <div>
+            <label for="pushUpMax">Best clean push-up set</label>
+            <input id="pushUpMax" type="text" inputmode="numeric" placeholder="Example: 12" />
+          </div>
+
+          <div>
+            <label for="plankMax">Best clean plank hold</label>
+            <input id="plankMax" type="text" inputmode="numeric" placeholder="Example: 60" />
+            <div class="field-help">Seconds.</div>
+          </div>
+
+          <div>
+            <label for="runBlockMinutes">Fixed run block</label>
+            <input id="runBlockMinutes" type="text" inputmode="numeric" placeholder="Example: 10" />
+            <div class="field-help">Minutes used for easy-run tracking and fixed-time retests.</div>
+          </div>
+
+          <div>
+            <label for="runBlockDistance">Best distance in that time</label>
+            <input id="runBlockDistance" type="text" inputmode="decimal" placeholder="Example: 0.82" />
+          </div>
+
+          <div class="full-span">
+            <label for="mileTime">Current mile time <span class="optional">(optional)</span></label>
+            <input id="mileTime" type="text" placeholder="Example: 7:42" />
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="generatePlanBtn" type="button">Generate Plan</button>
+          <button id="savePlanBtn" type="button" class="secondary">Save Plan</button>
+        </div>
+
+        <div id="plannerStatus" class="status-box">Fill the form, then generate the plan.</div>
+      </section>
+
+      <section class="card">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Output</p>
+            <h2>Plan Summary</h2>
+          </div>
+        </div>
+
+        <div id="planSummaryPreview" class="preview-summary">No plan generated yet.</div>
+
+        <div class="planner-note">
+          The app checks previous tracker data to decide whether the next block should start with an intervention week or follow normal progression with a deload later.
+        </div>
+
+        <div id="plannerSignalBox" class="signal-box">
+          Previous data signals will appear here after logs exist.
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <div class="section-title-row">
+        <div>
+          <p class="eyebrow">Preview</p>
+          <h2>Schedule Preview</h2>
+        </div>
+      </div>
+
+      <div id="schedulePreview" class="preview-list"></div>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>
