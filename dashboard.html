@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Dashboard</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .records-list,
+    .charts-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .record-item,
+    .chart-item {
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .record-top,
+    .chart-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .record-name,
+    .chart-name {
+      font-weight: 800;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .record-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f8fbff;
+      margin: 4px 0;
+    }
+
+    .record-sub,
+    .chart-sub {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      white-space: nowrap;
+      background: rgba(59, 130, 246, 0.18);
+      color: #dbeafe;
+    }
+
+    .tag.warn {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+    }
+
+    .tag.good {
+      background: rgba(34, 197, 94, 0.2);
+      color: #bbf7d0;
+    }
+
+    .intervention-banner {
+      margin-bottom: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fde68a;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .goal-callout {
+      margin: 12px 0 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(37, 99, 235, 0.16);
+      border: 1px solid rgba(96, 165, 250, 0.28);
+    }
+
+    .goal-callout-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #bfdbfe;
+      margin-bottom: 4px;
+    }
+
+    .goal-callout-text {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #eff6ff;
+      line-height: 1.35;
+    }
+
+    .readiness-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .readiness-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .readiness-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .readiness-note {
+      margin-top: 10px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      font-size: 0.93rem;
+    }
+
+    .readiness-note.low {
+      color: #fecaca;
+    }
+
+    .readiness-note.high {
+      color: #bbf7d0;
+    }
+
+    .goal-muted {
+      margin-top: 10px;
+      color: #cbd5e1;
+      font-size: 0.93rem;
+      line-height: 1.45;
+    }
+
+    .tracker-load-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+    }
+
+    .tracker-exercise {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .tracker-ex-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .tracker-ex-name {
+      font-weight: 800;
+      font-size: 1.06rem;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+
+    .tracker-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .meta-pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(30, 41, 59, 0.9);
+      color: #dbeafe;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .meta-pill.tempo {
+      background: rgba(59, 130, 246, 0.22);
+      color: #e0f2fe;
+    }
+
+    .meta-pill.run-cue {
+      background: rgba(16, 185, 129, 0.18);
+      color: #d1fae5;
+    }
+
+    .tracker-chip {
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.18);
+      color: #dbeafe;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .tracker-chip.ready {
+      background: rgba(34, 197, 94, 0.2);
+      color: #bbf7d0;
+    }
+
+    .tracker-table {
+      display: grid;
+      gap: 6px;
+    }
+
+    .tracker-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 120px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tracker-row.header {
+      font-weight: 800;
+      color: #dbeafe;
+      margin-bottom: 2px;
+    }
+
+    .tracker-goal {
+      color: #f8fbff;
+      font-weight: 700;
+    }
+
+    .tracker-help {
+      margin-top: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      font-size: 0.93rem;
+    }
+
+    .small-input {
+      margin: 0;
+      padding: 10px 12px;
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.72);
+      color: #fff;
+      box-sizing: border-box;
+    }
+
+    .small-note {
+      margin-top: 12px;
+    }
+
+    .small-textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.72);
+      color: #fff;
+      font: inherit;
+      box-sizing: border-box;
+    }
+
+    .small-textarea:focus,
+    .small-input:focus {
+      outline: none;
+      border-color: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .log-label-strong {
+      display: inline-block;
+      margin-bottom: 6px;
+      font-weight: 800;
+      color: #eaf2ff;
+    }
+
+    .lock-note {
+      margin-top: 10px;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 74px;
+      display: block;
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.35);
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .readiness-grid,
+      .tracker-row,
+      .tracker-load-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tracker-ex-head,
+      .day-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tracker-chip,
+      .tag {
+        width: fit-content;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+      <button class="secondary" id="logoutBtn">Log Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Your Dashboard</h1>
+      <p class="helper">Today’s workout unlocks on the actual day. Readiness is required before logging.</p>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Profile</h2>
+        <div class="info-list" id="profileBox">Loading profile...</div>
+        <div class="streak-box" id="streakBox"><strong>Workout streak:</strong> 0</div>
+      </section>
+
+      <section class="card">
+        <h2>Plan</h2>
+        <div id="planSummaryBox" class="empty-box">Loading your plan...</div>
+      </section>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="card">
+        <h2>Records & Retests</h2>
+        <div id="recordsBox" class="empty-box">Loading records...</div>
+      </section>
+
+      <section class="card">
+        <h2>Progress Charts</h2>
+        <div id="chartsBox" class="empty-box">Loading charts...</div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>This week</h2>
+      <div id="weekTrackerBox" class="empty-box">Loading week tracker...</div>
+    </section>
+
+    <section class="card">
+      <h2>Calendar ahead</h2>
+      <div id="calendarBox" class="empty-box">Loading calendar...</div>
+    </section>
+  </main>
+
+  <script>
+    const API = "https://fitnessplan-backend.cosmowind2013.workers.dev";
+    const token = localStorage.getItem("fitnessplan_token");
+
+    const profileBox = document.getElementById("profileBox");
+    const planSummaryBox = document.getElementById("planSummaryBox");
+    const recordsBox = document.getElementById("recordsBox");
+    const chartsBox = document.getElementById("chartsBox");
+    const weekTrackerBox = document.getElementById("weekTrackerBox");
+    const calendarBox = document.getElementById("calendarBox");
+    const streakBox = document.getElementById("streakBox");
+
+    function getUser() {
+      try {
+        return JSON.parse(localStorage.getItem("fitnessplan_user") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    function getPlan() {
+      try {
+        return JSON.parse(localStorage.getItem("fitnessplan_latest_plan") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    function getTrackerKey(plan) {
+      const user = getUser();
+      const userId = user?.email || "guest";
+      return `fitnessplan_tracker_${userId}_${plan.planName}_${plan.schedule?.[0]?.date || "local"}`;
+    }
+
+    function loadTracker(plan) {
+      try {
+        return JSON.parse(localStorage.getItem(getTrackerKey(plan)) || '{"days":{}}');
+      } catch {
+        return { days: {} };
+      }
+    }
+
+    function saveTracker(plan, tracker) {
+      localStorage.setItem(getTrackerKey(plan), JSON.stringify(tracker));
+    }
+
+    async function apiGet(path) {
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API}${path}`, { headers });
+      const text = await res.text();
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, error: text || "Invalid server response." };
+      }
+    }
+
+    function renderLoggedOutState() {
+      profileBox.innerHTML = `
+        <strong>Status:</strong> Not signed in<br>
+        <strong>Dashboard:</strong> Please log in to view your saved plan
+      `;
+      planSummaryBox.className = "empty-box";
+      planSummaryBox.textContent = "You are not signed in.";
+      recordsBox.className = "empty-box";
+      recordsBox.textContent = "Please log in to view records.";
+      chartsBox.className = "empty-box";
+      chartsBox.textContent = "Please log in to view charts.";
+      weekTrackerBox.className = "empty-box";
+      weekTrackerBox.textContent = "Please log in to use the dashboard.";
+      calendarBox.className = "empty-box";
+      calendarBox.textContent = "Please log in to use the dashboard.";
+      streakBox.innerHTML = `<strong>Workout streak:</strong> 0`;
+    }
+
+    function renderProfile(user) {
+      profileBox.innerHTML = `
+        <strong>Username:</strong> ${user.username}<br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Age:</strong> ${user.age}<br>
+        <strong>Age band:</strong> ${user.ageBand}<br>
+        <strong>Parent or guardian required:</strong> ${user.parentRequired ? "Yes" : "No"}
+      `;
+    }
+
+    function renderPlanSummary(plan) {
+      if (!plan) {
+        planSummaryBox.className = "empty-box";
+        planSummaryBox.textContent = "No plan found yet.";
+        return;
+      }
+
+      planSummaryBox.className = "summary-box";
+      planSummaryBox.textContent = plan.summary || "Plan loaded.";
+    }
+
+    function splitIntoWeeks(schedule) {
+      const weeks = [];
+      for (let i = 0; i < schedule.length; i += 7) {
+        weeks.push(schedule.slice(i, i + 7));
+      }
+      return weeks;
+    }
+
+    function formatWeekRange(week) {
+      if (!week.length) return "Week";
+      return `Week of ${week[0].dateLabel} to ${week[week.length - 1].dateLabel}`;
+    }
+
+    function workoutLetter(index) {
+      return String.fromCharCode(65 + index);
+    }
+
+    function currentWeekIndex(plan) {
+      const weeks = splitIntoWeeks(plan.schedule || []);
+      const todayISO = new Date().toISOString().slice(0, 10);
+      const idx = weeks.findIndex((week) => week.some((day) => day.date === todayISO));
+      if (idx >= 0) return idx;
+
+      const firstDate = plan.schedule?.[0]?.date;
+      if (firstDate && todayISO < firstDate) return 0;
+
+      return Math.max(0, Math.min(weeks.length - 1, 1));
+    }
+
+    function toNumber(value, fallback) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function parseFirstNumber(text) {
+      const match = String(text || "").match(/-?\d+(\.\d+)?/);
+      return match ? Number(match[0]) : null;
+    }
+
+    function parseTimeToSeconds(text) {
+      const s = String(text || "").trim();
+
+      let m = s.match(/^(\d{1,2}):([0-5]\d)$/);
+      if (m) return Number(m[1]) * 60 + Number(m[2]);
+
+      m = s.match(/^(\d{1,2}):([0-5]\d):([0-5]\d)$/);
+      if (m) return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+
+      return null;
+    }
+
+    function formatSeconds(totalSeconds) {
+      const sec = Math.max(0, Math.round(totalSeconds));
+      const mins = Math.floor(sec / 60);
+      const rem = sec % 60;
+      return `${mins}:${String(rem).padStart(2, "0")}`;
+    }
+
+    function daysBetween(dateA, dateB) {
+      const a = new Date(`${dateA}T12:00:00`);
+      const b = new Date(`${dateB}T12:00:00`);
+      return Math.floor((b - a) / (1000 * 60 * 60 * 24));
+    }
+
+    function getExerciseCategory(exerciseName) {
+      const n = String(exerciseName || "").toLowerCase();
+
+      if (n.includes("pull")) return "pull";
+      if (n.includes("chin")) return "pull";
+      if (n.includes("row")) return "pull";
+
+      if (n.includes("push")) return "push";
+      if (n.includes("press")) return "push";
+      if (n.includes("shoulder")) return "push";
+
+      if (n.includes("squat")) return "legs";
+      if (n.includes("split")) return "legs";
+      if (n.includes("deadlift")) return "legs";
+      if (n.includes("hinge")) return "legs";
+      if (n.includes("bridge")) return "legs";
+      if (n.includes("hip thrust")) return "legs";
+
+      if (n.includes("plank")) return "core";
+      if (n.includes("hang")) return "core";
+
+      if (n.includes("mile")) return "run-test";
+      if (n.includes("5k")) return "run-test";
+      if (n.includes("tempo")) return "run";
+      if (n.includes("run")) return "run";
+      if (n.includes("repeat")) return "run";
+
+      return "general";
+    }
+
+    function getSafeExerciseDefaults(exercise) {
+      const type = exercise?.targetType || "reps";
+
+      if (type === "seconds") {
+        return {
+          start: toNumber(exercise?.start, 20),
+          max: toNumber(exercise?.max, 60),
+          step: toNumber(exercise?.step, 5),
+          sets: toNumber(exercise?.sets, 2)
+        };
+      }
+
+      if (type === "minutes") {
+        return {
+          start: toNumber(exercise?.start, 5),
+          max: toNumber(exercise?.max, 20),
+          step: toNumber(exercise?.step, 5),
+          sets: toNumber(exercise?.sets, 1)
+        };
+      }
+
+      return {
+        start: toNumber(exercise?.start, 5),
+        max: toNumber(exercise?.max, 10),
+        step: toNumber(exercise?.step, 1),
+        sets: toNumber(exercise?.sets, 3)
+      };
+    }
+
+    function formatTargetValue(value, targetType) {
+      if (targetType === "seconds") return `${value} sec`;
+      if (targetType === "minutes") return `${value} min`;
+      return `${value} reps`;
+    }
+
+    function getExerciseHistory(plan, tracker, exerciseId, beforeDate) {
+      const history = [];
+      (plan.schedule || [])
+        .filter((day) => day.date < beforeDate && day.type === "workout")
+        .forEach((day) => {
+          const dayLog = tracker.days?.[day.date]?.[exerciseId];
+          if (dayLog) history.push(dayLog);
+        });
+      return history;
+    }
+
+    function countSuccessfulSessions(history, target) {
+      let count = 0;
+
+      history.forEach((entry) => {
+        if (Array.isArray(entry.values)) {
+          const ok = entry.values.every((v, i) => Number(v) >= Number(target[i] || 0));
+          if (ok) count += 1;
+        } else if (entry.logText) {
+          count += 1;
+        }
+      });
+
+      return count;
+    }
+
+    function computeNextGoal(exercise, history) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const progressionType = exercise.progressionType || "double";
+      const category = getExerciseCategory(exercise.name);
+
+      let current = safe.start;
+      let advanceFlag = false;
+
+      if (category === "run" || category === "run-test") {
+        return {
+          targetArray: Array(safe.sets).fill(current),
+          advanceFlag: false
+        };
+      }
+
+      if (progressionType === "static") {
+        return {
+          targetArray: Array(safe.sets).fill(current),
+          advanceFlag: false
+        };
+      }
+
+      history.forEach((entry) => {
+        if (!Array.isArray(entry.values)) return;
+
+        const target = Array(safe.sets).fill(current);
+        const success = entry.values.every((v, i) => Number(v) >= Number(target[i] || 0));
+        if (!success) return;
+
+        if (progressionType === "ladder") {
+          if (current < safe.max) {
+            current += safe.step;
+          } else {
+            advanceFlag = true;
+            current = safe.start;
+          }
+          return;
+        }
+
+        if (progressionType === "hold") {
+          if (current < safe.max) current += safe.step;
+          return;
+        }
+
+        if (progressionType === "double") {
+          if (current < safe.max) {
+            current += safe.step;
+          } else {
+            advanceFlag = true;
+            current = safe.start;
+          }
+        }
+      });
+
+      return {
+        targetArray: Array(safe.sets).fill(current),
+        advanceFlag
+      };
+    }
+
+    function getStatusText(exercise, goalState) {
+      const category = getExerciseCategory(exercise.name);
+      if (goalState.advanceFlag) {
+        if (category === "run" || category === "run-test") return "Track";
+        return "Progress";
+      }
+      return "Current";
+    }
+
+    function getExerciseLogLabel(exercise) {
+      const name = String(exercise?.name || "").toLowerCase();
+      const targetType = exercise?.targetType || "reps";
+
+      if (name.includes("plank")) return "Log seconds held";
+      if (name.includes("dead hang")) return "Log seconds held";
+      if (name.includes("hang")) return "Log seconds held";
+      if (targetType === "seconds") return "Log seconds completed";
+      if (targetType === "minutes") return "Log minutes completed";
+      return "Log reps completed";
+    }
+
+    function getExerciseColumnLabel(exercise) {
+      const name = String(exercise?.name || "").toLowerCase();
+      const targetType = exercise?.targetType || "reps";
+
+      if (name.includes("plank")) return "Log seconds";
+      if (name.includes("dead hang")) return "Log seconds";
+      if (name.includes("hang")) return "Log seconds";
+      if (targetType === "seconds") return "Log seconds";
+      if (targetType === "minutes") return "Log minutes";
+      return "Log reps";
+    }
+
+    function getExerciseInputPlaceholder(exercise) {
+      const name = String(exercise?.name || "").toLowerCase();
+      const targetType = exercise?.targetType || "reps";
+
+      if (name.includes("plank")) return "sec";
+      if (name.includes("dead hang")) return "sec";
+      if (name.includes("hang")) return "sec";
+      if (targetType === "seconds") return "sec";
+      if (targetType === "minutes") return "min";
+      return "reps";
+    }
+
+    function getLastLoadOrAssist(history) {
+      for (let i = history.length - 1; i >= 0; i -= 1) {
+        const entry = history[i];
+        if (entry && entry.loadValue !== undefined && entry.loadType) {
+          return {
+            loadType: entry.loadType,
+            loadValue: Number(entry.loadValue) || 0
+          };
+        }
+      }
+      return null;
+    }
+
+    function getNextLoadSuggestion(exercise, history, goalState) {
+      const category = getExerciseCategory(exercise.name);
+      const last = getLastLoadOrAssist(history);
+
+      if (!last) return "Log a load or assistance value to unlock the next suggestion.";
+
+      if (!goalState.advanceFlag) {
+        if (last.loadType === "assistance") return `Keep assistance at ${last.loadValue} lb for now.`;
+        return `Keep load at ${last.loadValue} lb for now.`;
+      }
+
+      if (category === "pull" && last.loadType === "assistance") {
+        const nextAssist = Math.max(0, last.loadValue - 5);
+        return `Next time: reduce assistance to ${nextAssist} lb.`;
+      }
+
+      if (last.loadType === "load") {
+        const bump = category === "legs" ? 5 : 2.5;
+        return `Next time: increase load to ${last.loadValue + bump} lb if form stays clean.`;
+      }
+
+      if (last.loadType === "assistance") {
+        const nextAssist = Math.max(0, last.loadValue - 5);
+        return `Next time: reduce assistance to ${nextAssist} lb.`;
+      }
+
+      return "Progress only when all sets are clean.";
+    }
+
+    function getRunCue(exercise) {
+      const name = String(exercise?.name || "").toLowerCase();
+      if (name.includes("easy")) return "Aerobic conversational run";
+      if (name.includes("tempo")) return "Comfortably hard, controlled effort";
+      if (name.includes("interval")) return "Strong repeatable effort";
+      if (name.includes("hard")) return "Strong repeatable effort";
+      if (name.includes("mile")) return "Flat route or track test";
+      return "Controlled running effort";
+    }
+
+    function getRunGoalText(exercise, safe) {
+      const name = String(exercise?.name || "").toLowerCase();
+      const minutes = safe.start;
+
+      if (name.includes("mile")) return "Run 1 mile and log your time";
+      if (name.includes("easy")) return `Cover relaxed distance in ${minutes} min`;
+      if (name.includes("tempo")) return `Cover as much quality distance as you can in ${minutes} min`;
+      if (name.includes("interval")) return `Work hard for ${minutes} min total`;
+      if (name.includes("hard")) return `Cover as much strong distance as you can in ${minutes} min`;
+
+      return `Run for ${minutes} min`;
+    }
+
+    function getReadiness(dayTracker) {
+      return dayTracker?._sessionReadiness || null;
+    }
+
+    function readinessComplete(r) {
+      return !!(
+        r &&
+        r.sleepHours !== undefined &&
+        r.sleepHours !== "" &&
+        r.soreness !== undefined &&
+        r.soreness !== "" &&
+        r.energy !== undefined &&
+        r.energy !== ""
+      );
+    }
+
+    function sleepHoursToScore(hours) {
+      const h = Number(hours);
+      if (!Number.isFinite(h)) return null;
+      if (h < 5) return 1;
+      if (h < 6) return 2;
+      if (h < 7) return 3;
+      if (h < 8) return 4;
+      return 5;
+    }
+
+    function computeReadinessSummary(r) {
+      if (!readinessComplete(r)) return null;
+
+      const sleepScore = sleepHoursToScore(r.sleepHours);
+      const soreness = Number(r.soreness);
+      const energy = Number(r.energy);
+
+      if (!Number.isFinite(sleepScore) || !Number.isFinite(soreness) || !Number.isFinite(energy)) {
+        return null;
+      }
+
+      const sorenessAdjusted = 6 - soreness;
+      const avg = (sleepScore + sorenessAdjusted + energy) / 3;
+
+      if (avg <= 2.25) {
+        return {
+          level: "low",
+          avg,
+          label: "Low readiness",
+          note: "High fatigue risk. Volume is reduced automatically today."
+        };
+      }
+
+      if (avg >= 4) {
+        return {
+          level: "high",
+          avg,
+          label: "High readiness",
+          note: "Proceed normally if form stays clean."
+        };
+      }
+
+      return {
+        level: "normal",
+        avg,
+        label: "Normal readiness",
+        note: "Proceed with the planned work."
+      };
+    }
+
+    function getMetricForEntry(exercise, entry) {
+      const category = getExerciseCategory(exercise.name);
+      const name = String(exercise.name || "").toLowerCase();
+
+      if (category === "run-test" || (category === "run" && name.includes("mile"))) {
+        const secs = parseTimeToSeconds(entry.logText || entry.noteText || "");
+        if (secs != null) {
+          return {
+            value: secs,
+            better: "lower",
+            display: formatSeconds(secs),
+            metricLabel: "Best time"
+          };
+        }
+      }
+
+      if (category === "run") {
+        const dist = parseFirstNumber(entry.logText);
+        if (dist != null) {
+          return {
+            value: dist,
+            better: "higher",
+            display: entry.logText || String(dist),
+            metricLabel: "Best distance"
+          };
+        }
+        return null;
+      }
+
+      if (
+        category === "pull" &&
+        entry.loadType === "assistance" &&
+        Number.isFinite(Number(entry.loadValue)) &&
+        String(entry.loadValue).trim() !== ""
+      ) {
+        return {
+          value: Number(entry.loadValue),
+          better: "lower",
+          display: `${Number(entry.loadValue)} lb assistance`,
+          metricLabel: "Lowest assistance"
+        };
+      }
+
+      if (
+        entry.loadType === "load" &&
+        Number.isFinite(Number(entry.loadValue)) &&
+        String(entry.loadValue).trim() !== "" &&
+        Number(entry.loadValue) > 0
+      ) {
+        return {
+          value: Number(entry.loadValue),
+          better: "higher",
+          display: `${Number(entry.loadValue)} lb`,
+          metricLabel: "Highest load"
+        };
+      }
+
+      if (exercise.targetType === "seconds" || category === "core") {
+        const best = Array.isArray(entry.values) ? Math.max(...entry.values.map(Number)) : null;
+        if (Number.isFinite(best)) {
+          return {
+            value: best,
+            better: "higher",
+            display: `${best} sec`,
+            metricLabel: "Best hold"
+          };
+        }
+      }
+
+      if (exercise.targetType === "minutes") {
+        const best = Array.isArray(entry.values) ? Math.max(...entry.values.map(Number)) : null;
+        if (Number.isFinite(best)) {
+          return {
+            value: best,
+            better: "higher",
+            display: `${best} min`,
+            metricLabel: "Best time"
+          };
+        }
+      }
+
+      if (Array.isArray(entry.values)) {
+        const best = Math.max(...entry.values.map(Number));
+        if (Number.isFinite(best)) {
+          return {
+            value: best,
+            better: "higher",
+            display: `${best} reps`,
+            metricLabel: "Best set"
+          };
+        }
+      }
+
+      return null;
+    }
+
+    function collectExerciseMetrics(plan, tracker) {
+      const map = new Map();
+
+      (plan.schedule || []).forEach((day) => {
+        if (day.type !== "workout") return;
+
+        (day.exercises || []).forEach((exercise) => {
+          const entry = tracker.days?.[day.date]?.[exercise.id];
+          if (!entry) return;
+
+          const metric = getMetricForEntry(exercise, entry);
+          if (!metric) return;
+
+          const key = exercise.name;
+          if (!map.has(key)) {
+            map.set(key, {
+              name: exercise.name,
+              exercise,
+              category: getExerciseCategory(exercise.name),
+              better: metric.better,
+              metricLabel: metric.metricLabel,
+              points: []
+            });
+          }
+
+          map.get(key).points.push({
+            date: day.date,
+            label: day.dateLabel,
+            value: metric.value,
+            display: metric.display
+          });
+        });
+      });
+
+      map.forEach((item) => item.points.sort((a, b) => a.date.localeCompare(b.date)));
+      return Array.from(map.values());
+    }
+
+    function detectPlateau(points, better) {
+      if (!points || points.length < 4) return false;
+
+      const last3 = points.slice(-3);
+      const earlier = points.slice(0, -3);
+      if (!earlier.length) return false;
+
+      if (better === "lower") {
+        const bestEarlier = Math.min(...earlier.map((p) => p.value));
+        return last3.every((p) => p.value >= bestEarlier);
+      }
+
+      const bestEarlier = Math.max(...earlier.map((p) => p.value));
+      return last3.every((p) => p.value <= bestEarlier);
+    }
+
+    function pickRecordPoint(points, better) {
+      if (!points.length) return null;
+      if (better === "lower") {
+        return points.reduce((best, p) => (p.value < best.value ? p : best), points[0]);
+      }
+      return points.reduce((best, p) => (p.value > best.value ? p : best), points[0]);
+    }
+
+    function staleWindowDays(category) {
+      if (category === "run" || category === "run-test") return 28;
+      if (category === "core") return 35;
+      return 42;
+    }
+
+    function createSparkline(points, better) {
+      if (!points || points.length < 2) {
+        return `<svg class="chart-svg" viewBox="0 0 300 74" preserveAspectRatio="none">
+          <text x="12" y="42" fill="#94a3b8" font-size="12">Need more logs to chart progress</text>
+        </svg>`;
+      }
+
+      const width = 300;
+      const height = 74;
+      const padX = 12;
+      const padY = 10;
+
+      const values = points.map((p) => p.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const range = max - min || 1;
+
+      const coords = points.map((p, i) => {
+        const x = padX + (i * (width - padX * 2)) / Math.max(1, points.length - 1);
+        let normalized = (p.value - min) / range;
+        if (better === "lower") normalized = 1 - normalized;
+        const y = padY + (1 - normalized) * (height - padY * 2);
+        return { x, y };
+      });
+
+      const path = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x} ${c.y}`).join(" ");
+      const circles = coords.map((c) => `<circle cx="${c.x}" cy="${c.y}" r="3.2" fill="#93c5fd" />`).join("");
+
+      return `
+        <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+          <path d="${path}" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          ${circles}
+        </svg>
+      `;
+    }
+
+    function renderRecordsAndCharts(plan) {
+      const tracker = loadTracker(plan);
+      const metrics = collectExerciseMetrics(plan, tracker);
+
+      if (!metrics.length) {
+        recordsBox.className = "empty-box";
+        recordsBox.textContent = "No records yet. Log some sessions first.";
+        chartsBox.className = "empty-box";
+        chartsBox.textContent = "Charts will appear after you log workouts.";
+        return;
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const recordItems = [];
+      let retestCount = 0;
+
+      metrics.forEach((item) => {
+        const recordPoint = pickRecordPoint(item.points, item.better);
+        const stale = recordPoint ? daysBetween(recordPoint.date, today) >= staleWindowDays(item.category) : false;
+        const plateau = detectPlateau(item.points, item.better);
+        const retest = stale || plateau;
+        if (retest) retestCount += 1;
+
+        recordItems.push({
+          ...item,
+          recordPoint,
+          stale,
+          plateau,
+          retest
+        });
+      });
+
+      recordsBox.className = "";
+      recordsBox.innerHTML = "";
+
+      if (retestCount >= 2) {
+        const banner = document.createElement("div");
+        banner.className = "intervention-banner";
+        banner.textContent = "Intervention Week recommended: deload + retest. Multiple records look stale or plateaued.";
+        recordsBox.appendChild(banner);
+      }
+
+      const list = document.createElement("div");
+      list.className = "records-list";
+
+      recordItems.sort((a, b) => a.name.localeCompare(b.name)).forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "record-item";
+        card.innerHTML = `
+          <div class="record-top">
+            <div>
+              <div class="record-name">${item.name}</div>
+              <div class="record-sub">${item.metricLabel}</div>
+            </div>
+            <span class="tag ${item.retest ? "warn" : "good"}">${item.retest ? "Retest this week" : "Active"}</span>
+          </div>
+          <div class="record-value">${item.recordPoint ? item.recordPoint.display : "No record yet"}</div>
+          <div class="record-sub">
+            ${item.recordPoint ? `Set on ${item.recordPoint.label}${item.plateau ? " • plateau detected" : item.stale ? " • stale record" : ""}` : "Log this exercise to create a record."}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      recordsBox.appendChild(list);
+
+      chartsBox.className = "";
+      chartsBox.innerHTML = "";
+
+      const chartsList = document.createElement("div");
+      chartsList.className = "charts-list";
+
+      metrics.sort((a, b) => a.name.localeCompare(b.name)).forEach((item) => {
+        const latest = item.points[item.points.length - 1];
+        const recordPoint = pickRecordPoint(item.points, item.better);
+
+        const card = document.createElement("div");
+        card.className = "chart-item";
+        card.innerHTML = `
+          <div class="chart-top">
+            <div>
+              <div class="chart-name">${item.name}</div>
+              <div class="record-sub">${item.metricLabel}</div>
+            </div>
+            <span class="tag">${latest ? latest.display : "No data"}</span>
+          </div>
+          ${createSparkline(item.points, item.better)}
+          <div class="chart-sub">${recordPoint ? `Record: ${recordPoint.display}` : "No chart data yet."}</div>
+        `;
+        chartsList.appendChild(card);
+      });
+
+      chartsBox.appendChild(chartsList);
+    }
+
+    function createReadinessBox(plan, tracker, day, readinessSummary, unlocked) {
+      const dayTracker = tracker.days?.[day.date] || {};
+      const stored = getReadiness(dayTracker) || {};
+
+      const wrap = document.createElement("div");
+      wrap.className = "readiness-box";
+
+      if (!unlocked) {
+        wrap.innerHTML = `
+          <strong>Readiness</strong>
+          <div class="readiness-note">Readiness can be filled on ${day.dateLabel}.</div>
+        `;
+        return wrap;
+      }
+
+      wrap.innerHTML = `
+        <strong>Readiness check</strong>
+        <div class="readiness-grid">
+          <div>
+            <label>Sleep (hours)</label>
+            <input
+              class="small-input"
+              type="text"
+              inputmode="decimal"
+              placeholder="Example: 7.5"
+              data-readiness-day="${day.date}"
+              data-field="sleepHours"
+              value="${stored.sleepHours ?? ""}"
+            />
+          </div>
+          <div>
+            <label>Soreness (1 low, 5 high)</label>
+            <select class="small-input" data-readiness-day="${day.date}" data-field="soreness">
+              <option value="">-</option>
+              <option value="1" ${stored.soreness == 1 ? "selected" : ""}>1</option>
+              <option value="2" ${stored.soreness == 2 ? "selected" : ""}>2</option>
+              <option value="3" ${stored.soreness == 3 ? "selected" : ""}>3</option>
+              <option value="4" ${stored.soreness == 4 ? "selected" : ""}>4</option>
+              <option value="5" ${stored.soreness == 5 ? "selected" : ""}>5</option>
+            </select>
+          </div>
+          <div>
+            <label>Energy (1 low, 5 high)</label>
+            <select class="small-input" data-readiness-day="${day.date}" data-field="energy">
+              <option value="">-</option>
+              <option value="1" ${stored.energy == 1 ? "selected" : ""}>1</option>
+              <option value="2" ${stored.energy == 2 ? "selected" : ""}>2</option>
+              <option value="3" ${stored.energy == 3 ? "selected" : ""}>3</option>
+              <option value="4" ${stored.energy == 4 ? "selected" : ""}>4</option>
+              <option value="5" ${stored.energy == 5 ? "selected" : ""}>5</option>
+            </select>
+          </div>
+        </div>
+        <div class="readiness-actions">
+          <button type="button" data-set-readiness-day="${day.date}">Set readiness</button>
+          ${readinessSummary ? `<span class="tag ${readinessSummary.level === "low" ? "warn" : "good"}">${readinessSummary.label}</span>` : ""}
+        </div>
+        <div class="readiness-note ${readinessSummary ? readinessSummary.level : ""}">
+          ${readinessSummary ? readinessSummary.note : "Fill sleep hours, soreness, and energy first. Logging stays locked until readiness is set."}
+        </div>
+      `;
+
+      const button = wrap.querySelector(`[data-set-readiness-day="${day.date}"]`);
+      button.addEventListener("click", () => {
+        const nextTracker = loadTracker(plan);
+        if (!nextTracker.days[day.date]) nextTracker.days[day.date] = {};
+
+        const values = {};
+        wrap.querySelectorAll(`[data-readiness-day="${day.date}"]`).forEach((el) => {
+          values[el.dataset.field] = el.value;
+        });
+
+        if (!readinessComplete(values)) {
+          alert("Fill sleep hours, soreness, and energy first.");
+          return;
+        }
+
+        const sleepHours = Number(values.sleepHours);
+        const soreness = Number(values.soreness);
+        const energy = Number(values.energy);
+
+        if (!Number.isFinite(sleepHours) || sleepHours <= 0 || sleepHours > 24) {
+          alert("Enter a real sleep value in hours.");
+          return;
+        }
+
+        nextTracker.days[day.date]._sessionReadiness = {
+          sleepHours,
+          soreness,
+          energy
+        };
+
+        saveTracker(plan, nextTracker);
+        renderRecordsAndCharts(plan);
+        renderWeekTracker(plan);
+      });
+
+      return wrap;
+    }
+
+    function createRunTracker(plan, tracker, day, exercise, readinessSummary, canLog) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const history = getExerciseHistory(plan, tracker, exercise.id, day.date);
+      const goalState = computeNextGoal({ ...exercise, ...safe }, history);
+      const existing = tracker.days?.[day.date]?.[exercise.id] || {};
+      const cueText = getRunCue(exercise);
+      const goalText = getRunGoalText(exercise, safe);
+      const isTimeTest = String(exercise.name || "").toLowerCase().includes("mile") || String(exercise.name || "").toLowerCase().includes("5k");
+
+      const wrap = document.createElement("div");
+      wrap.className = "tracker-exercise";
+
+      wrap.innerHTML = `
+        <div class="tracker-ex-head">
+          <div>
+            <div class="tracker-ex-name">${exercise.name || "Run"}</div>
+            <div class="tracker-meta">
+              <span class="meta-pill run-cue">${cueText}</span>
+            </div>
+          </div>
+          <div class="tracker-chip">${getStatusText(exercise, goalState)}</div>
+        </div>
+      `;
+
+      const goalCallout = document.createElement("div");
+      goalCallout.className = "goal-callout";
+      goalCallout.innerHTML = `
+        <div class="goal-callout-label">Goal</div>
+        <div class="goal-callout-text">${goalText}</div>
+      `;
+      wrap.appendChild(goalCallout);
+
+      if (readinessSummary?.level === "low") {
+        const low = document.createElement("div");
+        low.className = "goal-muted";
+        low.textContent = "Low readiness today. Keep this controlled and do not force the pace.";
+        wrap.appendChild(low);
+      }
+
+      const logRow = document.createElement("div");
+      logRow.className = "small-note";
+      logRow.innerHTML = `
+        <label class="log-label-strong">${isTimeTest ? "Log time (m:ss)" : "Log distance covered"}</label>
+        <input
+          class="small-input"
+          data-run-log-day="${day.date}"
+          data-run-log-ex="${exercise.id}"
+          type="text"
+          placeholder="${isTimeTest ? "Example: 7:42" : "Example: 0.82 miles"}"
+          value="${existing.logText || ""}"
+          ${canLog ? "" : "disabled"}
+        />
+      `;
+      wrap.appendChild(logRow);
+
+      if (!isTimeTest) {
+        const notesRow = document.createElement("div");
+        notesRow.className = "small-note";
+        notesRow.innerHTML = `
+          <label>Optional notes</label>
+          <textarea
+            class="small-textarea"
+            data-run-note-day="${day.date}"
+            data-run-note-ex="${exercise.id}"
+            placeholder="Optional"
+            ${canLog ? "" : "disabled"}
+          >${existing.noteText || ""}</textarea>
+        `;
+        wrap.appendChild(notesRow);
+      }
+
+      if (!canLog) {
+        const lock = document.createElement("div");
+        lock.className = "lock-note";
+        lock.textContent = "Complete readiness first to unlock logging.";
+        wrap.appendChild(lock);
+      }
+
+      return wrap;
+    }
+
+    function createStrengthTracker(plan, tracker, day, exercise, readinessSummary, canLog) {
+      const safe = getSafeExerciseDefaults(exercise);
+      const mergedExercise = { ...exercise, ...safe };
+      const history = getExerciseHistory(plan, tracker, exercise.id, day.date);
+      const goalState = computeNextGoal(mergedExercise, history);
+      const existing = tracker.days?.[day.date]?.[exercise.id] || {};
+
+      let visibleTargets = [...goalState.targetArray];
+      if (readinessSummary?.level === "low" && visibleTargets.length > 1) {
+        visibleTargets = visibleTargets.slice(0, visibleTargets.length - 1);
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "tracker-exercise";
+
+      wrap.innerHTML = `
+        <div class="tracker-ex-head">
+          <div>
+            <div class="tracker-ex-name">${mergedExercise.name || "Exercise"}</div>
+            <div class="tracker-meta">
+              <span class="meta-pill tempo">Tempo ${mergedExercise.tempo || "Controlled"}</span>
+              <span class="meta-pill">Rest ${mergedExercise.rest || "60 sec"}</span>
+            </div>
+          </div>
+          <div class="tracker-chip ${goalState.advanceFlag ? "ready" : ""}">${getStatusText(mergedExercise, goalState)}</div>
+        </div>
+      `;
+
+      if (readinessSummary?.level === "low") {
+        const low = document.createElement("div");
+        low.className = "goal-muted";
+        low.textContent = "Low readiness today. One set has been removed automatically.";
+        wrap.appendChild(low);
+      }
+
+      const table = document.createElement("div");
+      table.className = "tracker-table";
+      table.innerHTML = `
+        <div class="tracker-row header">
+          <div>Set</div>
+          <div>Goal</div>
+          <div>${getExerciseColumnLabel(mergedExercise)}</div>
+        </div>
+      `;
+
+      const existingValues = existing.values || [];
+
+      visibleTargets.forEach((target, i) => {
+        const row = document.createElement("div");
+        row.className = "tracker-row";
+        row.innerHTML = `
+          <div>Set ${i + 1}</div>
+          <div class="tracker-goal">${formatTargetValue(target, mergedExercise.targetType)}</div>
+          <div>
+            <input
+              class="small-input"
+              data-day="${day.date}"
+              data-ex="${exercise.id}"
+              data-set="${i}"
+              type="text"
+              inputmode="numeric"
+              placeholder="${getExerciseInputPlaceholder(mergedExercise)}"
+              value="${existingValues[i] || ""}"
+              ${canLog ? "" : "disabled"}
+            />
+          </div>
+        `;
+        table.appendChild(row);
+      });
+
+      wrap.appendChild(table);
+
+      const loadType = existing.loadType || "load";
+      const loadValue = existing.loadValue ?? "";
+
+      const loadBlock = document.createElement("div");
+      loadBlock.className = "small-note";
+      loadBlock.innerHTML = `
+        <label>Assistance or load</label>
+        <div class="tracker-load-grid">
+          <select class="small-input" data-load-type-day="${day.date}" data-load-type-ex="${exercise.id}" ${canLog ? "" : "disabled"}>
+            <option value="load" ${loadType === "load" ? "selected" : ""}>Load</option>
+            <option value="assistance" ${loadType === "assistance" ? "selected" : ""}>Assistance</option>
+          </select>
+          <input
+            class="small-input"
+            data-load-value-day="${day.date}"
+            data-load-value-ex="${exercise.id}"
+            type="text"
+            inputmode="decimal"
+            placeholder="Weight or assistance"
+            value="${loadValue}"
+            ${canLog ? "" : "disabled"}
+          />
+        </div>
+      `;
+      wrap.appendChild(loadBlock);
+
+      const help = document.createElement("div");
+      help.className = "tracker-help";
+      help.innerHTML = `
+        <strong>${getExerciseLogLabel(mergedExercise)}:</strong> enter what you actually completed.<br>
+        <strong>Next suggestion:</strong> ${getNextLoadSuggestion(mergedExercise, history, goalState)}
+      `;
+      wrap.appendChild(help);
+
+      if (!canLog) {
+        const lock = document.createElement("div");
+        lock.className = "lock-note";
+        lock.textContent = "Complete readiness first to unlock logging.";
+        wrap.appendChild(lock);
+      }
+
+      return wrap;
+    }
+
+    function createExerciseTracker(plan, tracker, day, exercise, readinessSummary, canLog) {
+      const category = getExerciseCategory(exercise.name);
+      if (category === "run" || category === "run-test") {
+        return createRunTracker(plan, tracker, day, exercise, readinessSummary, canLog);
+      }
+      return createStrengthTracker(plan, tracker, day, exercise, readinessSummary, canLog);
+    }
+
+    function countWorkoutStreak(plan, tracker) {
+      const todayISO = new Date().toISOString().slice(0, 10);
+      const workoutDates = (plan.schedule || [])
+        .filter((day) => day.type === "workout" && day.date <= todayISO)
+        .map((day) => day.date);
+
+      let streak = 0;
+      for (let i = workoutDates.length - 1; i >= 0; i -= 1) {
+        const dayLog = tracker.days?.[workoutDates[i]];
+        const done = dayLog && Object.keys(dayLog).some((k) => !k.startsWith("_"));
+        if (done) streak += 1;
+        else break;
+      }
+
+      return streak;
+    }
+
+    function renderWeekTracker(plan) {
+      const tracker = loadTracker(plan);
+      const weeks = splitIntoWeeks(plan.schedule || []);
+      const week = weeks[currentWeekIndex(plan)] || [];
+
+      weekTrackerBox.className = "";
+      weekTrackerBox.innerHTML = "";
+
+      const section = document.createElement("section");
+      const title = document.createElement("div");
+      title.className = "week-title";
+      title.textContent = formatWeekRange(week);
+      section.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "week-grid";
+
+      let letterIndex = 0;
+
+      week.forEach((day) => {
+        const card = document.createElement("div");
+        card.className = `day-card ${day.type === "rest" ? "rest" : ""}`;
+
+        let dayLabel = "Rest";
+        if (day.type === "workout") {
+          dayLabel = workoutLetter(letterIndex);
+          letterIndex += 1;
+        }
+
+        card.innerHTML = `
+          <div class="day-top">
+            <div>
+              <div class="day-letter">Day ${dayLabel}</div>
+              <div class="day-date">${day.dateLabel}</div>
+              <div class="helper">${day.title}</div>
+            </div>
+            <span class="badge ${day.type === "rest" ? "rest" : ""}">${day.goal}</span>
+          </div>
+        `;
+
+        if (day.type === "rest") {
+          const p = document.createElement("div");
+          p.className = "helper";
+          p.textContent = "Recovery day.";
+          card.appendChild(p);
+          grid.appendChild(card);
+          return;
+        }
+
+        const dayTracker = tracker.days?.[day.date] || {};
+        const readiness = getReadiness(dayTracker);
+        const readinessSummary = computeReadinessSummary(readiness);
+
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const unlocked = day.date === todayISO;
+        const canLog = unlocked && !!readinessSummary;
+
+        card.appendChild(createReadinessBox(plan, tracker, day, readinessSummary, unlocked));
+
+        if (day.warmup?.length) {
+          const warm = document.createElement("div");
+          warm.className = "session-block";
+          warm.innerHTML = "<h4>Warm-up</h4>";
+          const ul = document.createElement("ul");
+          day.warmup.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          warm.appendChild(ul);
+          card.appendChild(warm);
+        }
+
+        (day.exercises || []).forEach((exercise) => {
+          card.appendChild(createExerciseTracker(plan, tracker, day, exercise, readinessSummary, canLog));
+        });
+
+        if (day.cooldown?.length) {
+          const cool = document.createElement("div");
+          cool.className = "session-block";
+          cool.innerHTML = "<h4>Cooldown</h4>";
+          const ul = document.createElement("ul");
+          day.cooldown.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          cool.appendChild(ul);
+          card.appendChild(cool);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "tracker-actions";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save day log";
+        if (!canLog) saveBtn.disabled = true;
+
+        saveBtn.addEventListener("click", () => {
+          const nextTracker = loadTracker(plan);
+          if (!nextTracker.days[day.date]) nextTracker.days[day.date] = {};
+
+          const repInputs = card.querySelectorAll("input[data-day]");
+          const loadTypeSelects = card.querySelectorAll("select[data-load-type-day]");
+          const loadValueInputs = card.querySelectorAll("input[data-load-value-day]");
+          const runLogInputs = card.querySelectorAll("input[data-run-log-day]");
+          const runNoteInputs = card.querySelectorAll("textarea[data-run-note-day]");
+
+          const grouped = {};
+
+          repInputs.forEach((input) => {
+            const exId = input.dataset.ex;
+            if (!grouped[exId]) grouped[exId] = {};
+            if (!grouped[exId].values) grouped[exId].values = [];
+            grouped[exId].values[Number(input.dataset.set)] = Number(input.value || 0);
+          });
+
+          loadTypeSelects.forEach((select) => {
+            const exId = select.dataset.loadTypeEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].loadType = select.value;
+          });
+
+          loadValueInputs.forEach((input) => {
+            const exId = input.dataset.loadValueEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].loadValue = Number(input.value || 0);
+          });
+
+          runLogInputs.forEach((input) => {
+            const exId = input.dataset.runLogEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].logText = input.value || "";
+          });
+
+          runNoteInputs.forEach((input) => {
+            const exId = input.dataset.runNoteEx;
+            if (!grouped[exId]) grouped[exId] = {};
+            grouped[exId].noteText = input.value || "";
+          });
+
+          Object.entries(grouped).forEach(([exId, entry]) => {
+            nextTracker.days[day.date][exId] = {
+              ...entry,
+              savedAt: new Date().toISOString()
+            };
+          });
+
+          saveTracker(plan, nextTracker);
+          renderRecordsAndCharts(plan);
+          renderWeekTracker(plan);
+          renderCalendar(plan);
+          streakBox.innerHTML = `<strong>Workout streak:</strong> ${countWorkoutStreak(plan, nextTracker)}`;
+        });
+
+        actions.appendChild(saveBtn);
+        card.appendChild(actions);
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      weekTrackerBox.appendChild(section);
+      streakBox.innerHTML = `<strong>Workout streak:</strong> ${countWorkoutStreak(plan, tracker)}`;
+    }
+
+    function renderCalendar(plan) {
+      const weeks = splitIntoWeeks(plan.schedule || []);
+      calendarBox.className = "";
+      calendarBox.innerHTML = "";
+
+      weeks.forEach((week) => {
+        const section = document.createElement("section");
+        const title = document.createElement("div");
+        title.className = "week-title";
+        title.textContent = formatWeekRange(week);
+        section.appendChild(title);
+
+        const grid = document.createElement("div");
+        grid.className = "calendar-grid";
+
+        let letterIndex = 0;
+
+        week.forEach((day) => {
+          const card = document.createElement("div");
+          card.className = `calendar-card ${day.type === "rest" ? "rest" : ""}`;
+
+          let dayLabel = "Rest";
+          if (day.type === "workout") {
+            dayLabel = workoutLetter(letterIndex);
+            letterIndex += 1;
+          }
+
+          const exerciseNames = (day.exercises || []).map((ex) => ex.name).join(", ") || "Recovery";
+
+          card.innerHTML = `
+            <div class="day-top">
+              <div>
+                <div class="day-date">${day.dateLabel}</div>
+                <div class="helper">Day ${dayLabel}</div>
+              </div>
+              <span class="badge ${day.type === "rest" ? "rest" : ""}">${day.goal}</span>
+            </div>
+            <div class="helper">${exerciseNames}</div>
+          `;
+
+          grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        calendarBox.appendChild(section);
+      });
+    }
+
+    async function loadDashboard() {
+      const user = getUser();
+
+      if (!token || !user) {
+        renderLoggedOutState();
+        return;
+      }
+
+      try {
+        const me = await apiGet("/me");
+        if (me.ok && me.user) {
+          localStorage.setItem("fitnessplan_user", JSON.stringify(me.user));
+          renderProfile(me.user);
+        } else {
+          renderProfile(user);
+        }
+      } catch {
+        renderProfile(user);
+      }
+
+      let plan = getPlan();
+
+      try {
+        const planData = await apiGet("/my-plan");
+        if (planData.ok && planData.plan) {
+          plan = planData.plan;
+          localStorage.setItem("fitnessplan_latest_plan", JSON.stringify(plan));
+        }
+      } catch {}
+
+      renderPlanSummary(plan);
+
+      if (!plan) {
+        recordsBox.className = "empty-box";
+        recordsBox.textContent = "No plan found yet.";
+        chartsBox.className = "empty-box";
+        chartsBox.textContent = "No chart data yet.";
+        weekTrackerBox.className = "empty-box";
+        weekTrackerBox.textContent = "No plan found yet.";
+        calendarBox.className = "empty-box";
+        calendarBox.textContent = "No plan found yet.";
+        return;
+      }
+
+      renderRecordsAndCharts(plan);
+      renderWeekTracker(plan);
+      renderCalendar(plan);
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (token) {
+        try {
+          await fetch(`${API}/logout`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch {}
+      }
+
+      localStorage.removeItem("fitnessplan_token");
+      localStorage.removeItem("fitnessplan_user");
+      window.location.href = "./account-test.html";
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>
