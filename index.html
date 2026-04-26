@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitnessPlan Planner</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FitnessPlan</div>
+    <div class="topbar-actions">
+      <a class="nav-btn secondary active" href="./index.html?planner=1">Planner</a>
+      <a class="nav-btn secondary" href="./dashboard.html">Dashboard</a>
+      <a class="nav-btn secondary" href="./account-test.html">Account</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="section-title-row">
+        <div>
+          <p class="eyebrow">Planner</p>
+          <h1>Build your plan</h1>
+        </div>
+        <span class="mini-pill">4 weeks</span>
+      </div>
+      <p class="helper">
+        Answer a few quick questions and the app will build a cleaner training block.
+      </p>
+    </section>
+
+    <section class="planner-grid">
+      <section class="card">
+        <div class="stepper-top">
+          <div class="stepper-counter" id="plannerStepCounter">Question 1 of 13</div>
+          <div class="stepper-progress">
+            <div class="stepper-progress-fill" id="plannerStepProgress"></div>
+          </div>
+        </div>
+
+        <form id="plannerForm">
+          <div class="planner-step active" id="step-age">
+            <label for="age">Your age</label>
+            <input id="age" type="text" inputmode="numeric" placeholder="Example: 13" />
+            <div class="field-help">Used to adjust difficulty and recovery.</div>
+          </div>
+
+          <div class="planner-step" id="step-goal">
+            <label for="primaryGoal">Main goal</label>
+            <select id="primaryGoal">
+              <option value="5k">5K focus</option>
+              <option value="mile">Mile focus</option>
+              <option value="mixed">Running + strength</option>
+            </select>
+          </div>
+
+          <div class="planner-step" id="step-days">
+            <label for="daysPerWeek">Workouts per week</label>
+            <select id="daysPerWeek">
+              <option value="3">3 workouts</option>
+              <option value="4">4 workouts</option>
+              <option value="5">5 workouts</option>
+            </select>
+            <div class="field-help">Shown by week as Workout A, B, C, and so on.</div>
+          </div>
+
+          <div class="planner-step" id="step-length">
+            <label for="sessionLength">Workout length</label>
+            <select id="sessionLength">
+              <option value="30">30 minutes</option>
+              <option value="60" selected>60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+          </div>
+
+          <div class="planner-step" id="step-style">
+            <label>Training style</label>
+            <div class="checkbox-grid">
+              <label class="check-tile">
+                <input type="checkbox" data-style-choice value="calisthenics" checked />
+                <span>Calisthenics</span>
+              </label>
+              <label class="check-tile">
+                <input type="checkbox" data-style-choice value="weightlifting" />
+                <span>Weightlifting</span>
+              </label>
+              <label class="check-tile">
+                <input type="checkbox" data-style-choice value="machines" />
+                <span>Machines</span>
+              </label>
+              <label class="check-tile">
+                <input type="checkbox" data-style-choice value="isometrics" />
+                <span>Isometrics</span>
+              </label>
+            </div>
+            <div class="field-help">Pick all that apply.</div>
+          </div>
+
+          <div class="planner-step" id="step-push-ability">
+            <label for="canDoPushup">Can you do a push-up?</label>
+            <select id="canDoPushup">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="planner-step" id="step-push-count">
+            <label for="pushUpMax">How many clean push-ups?</label>
+            <input id="pushUpMax" type="text" inputmode="numeric" placeholder="Example: 12" />
+          </div>
+
+          <div class="planner-step" id="step-pull-ability">
+            <label for="canPullUp">Can you do a pull-up?</label>
+            <select id="canPullUp">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+
+          <div class="planner-step" id="step-pull-count">
+            <label for="pullUpMax">How many clean pull-ups?</label>
+            <input id="pullUpMax" type="text" inputmode="numeric" placeholder="Example: 3" />
+          </div>
+
+          <div class="planner-step" id="step-plank">
+            <label for="plankMax">Best clean plank hold</label>
+            <input id="plankMax" type="text" inputmode="numeric" placeholder="Example: 60" />
+            <div class="field-help">Enter seconds.</div>
+          </div>
+
+          <div class="planner-step" id="step-mile">
+            <label for="mileTime">Best mile time</label>
+            <input id="mileTime" type="text" placeholder="Example: 8:05" />
+            <div class="field-help">Required so the plan has a real running baseline.</div>
+          </div>
+
+          <div class="planner-step" id="step-run-time">
+            <label for="runDurationValue">Longest continuous run in one workout</label>
+            <div class="split-input">
+              <input id="runDurationValue" type="text" inputmode="decimal" placeholder="Example: 20" />
+              <select id="runDurationUnit">
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+              </select>
+            </div>
+            <div class="field-help">This is one run inside one workout, not your total weekly time.</div>
+          </div>
+
+          <div class="planner-step" id="step-run-distance">
+            <label for="runDistanceValue">Longest run distance in one workout</label>
+            <div class="split-input">
+              <input id="runDistanceValue" type="text" inputmode="decimal" placeholder="Example: 2" />
+              <select id="runDistanceUnit">
+                <option value="miles">Miles</option>
+                <option value="km">Kilometers</option>
+              </select>
+            </div>
+            <div class="field-help">Distance covered in one workout run.</div>
+          </div>
+
+          <div class="planner-step" id="step-start-date">
+            <label for="startDate">Plan start date</label>
+            <input id="startDate" type="date" />
+          </div>
+
+          <div class="button-row">
+            <button id="plannerBackBtn" type="button" class="secondary">Back</button>
+            <button id="plannerNextBtn" type="button">Next</button>
+            <button id="generatePlanBtn" type="button" class="hidden">Generate plan</button>
+            <button id="savePlanBtn" type="button" class="secondary hidden">Save plan</button>
+          </div>
+        </form>
+
+        <div id="plannerStatus" class="status-box">Answer the questions to build your plan.</div>
+      </section>
+
+      <section class="card">
+        <h2>Plan Summary</h2>
+        <div id="planSummaryPreview" class="preview-summary">No plan generated yet.</div>
+        <div class="field-help">
+          Cleaner summary. Cleaner schedule. Less repetition.
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>Schedule Preview</h2>
+      <div id="schedulePreview" class="preview-list"></div>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>
